@@ -75,17 +75,17 @@ export const budgetService = {
     console.log("[v0] Getting budgets for user:", userId, month, year)
     try {
       if (month && year) {
-        return await sql`
+        return (await sql`
           SELECT * FROM budgets 
           WHERE user_id = ${userId} AND month = ${month} AND year = ${year}
           ORDER BY category
-        `
+        `) as Budget[]
       }
-      return await sql`
+      return (await sql`
         SELECT * FROM budgets 
         WHERE user_id = ${userId}
         ORDER BY year DESC, month DESC, category
-      `
+      `) as Budget[]
     } catch (error) {
       console.error("[v0] Error getting budgets:", error)
       throw error
@@ -95,12 +95,12 @@ export const budgetService = {
   async createBudget(budget: Omit<Budget, "id" | "created_at" | "updated_at">): Promise<Budget> {
     console.log("[v0] Creating budget:", budget)
     try {
-      const [newBudget] = await sql`
+  const [newBudget] = (await sql`
         INSERT INTO budgets (user_id, category, budgeted_amount, actual_amount, notes, month, year)
         VALUES (${budget.user_id}, ${budget.category}, ${budget.budgeted_amount}, ${budget.actual_amount}, ${budget.notes}, ${budget.month}, ${budget.year})
         RETURNING *
-      `
-      return newBudget
+  `) as Budget[]
+  return newBudget as Budget
     } catch (error) {
       console.error("[v0] Error creating budget:", error)
       throw error
@@ -110,7 +110,7 @@ export const budgetService = {
   async updateBudget(id: number, updates: Partial<Budget>): Promise<Budget> {
     console.log("[v0] Updating budget:", id, updates)
     try {
-      const [updatedBudget] = await sql`
+  const [updatedBudget] = (await sql`
         UPDATE budgets 
         SET budgeted_amount = COALESCE(${updates.budgeted_amount}, budgeted_amount),
             actual_amount = COALESCE(${updates.actual_amount}, actual_amount),
@@ -118,8 +118,8 @@ export const budgetService = {
             updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
-      `
-      return updatedBudget
+  `) as Budget[]
+  return updatedBudget as Budget
     } catch (error) {
       console.error("[v0] Error updating budget:", error)
       throw error
@@ -161,11 +161,11 @@ export const savingsService = {
   async getSavingsGoals(userId: string): Promise<SavingsGoal[]> {
     console.log("[v0] Getting savings goals for user:", userId)
     try {
-      return await sql`
+  return (await sql`
         SELECT * FROM savings_goals 
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
-      `
+  `) as SavingsGoal[]
     } catch (error) {
       console.error("[v0] Error getting savings goals:", error)
       throw error
@@ -175,12 +175,12 @@ export const savingsService = {
   async createSavingsGoal(goal: Omit<SavingsGoal, "id" | "created_at" | "updated_at">): Promise<SavingsGoal> {
     console.log("[v0] Creating savings goal:", goal)
     try {
-      const [newGoal] = await sql`
+  const [newGoal] = (await sql`
         INSERT INTO savings_goals (user_id, name, target_amount, current_amount, monthly_contribution, category, target_date, is_completed)
         VALUES (${goal.user_id}, ${goal.name}, ${goal.target_amount}, ${goal.current_amount}, ${goal.monthly_contribution}, ${goal.category}, ${goal.target_date}, ${goal.is_completed})
         RETURNING *
-      `
-      return newGoal
+  `) as SavingsGoal[]
+  return newGoal as SavingsGoal
     } catch (error) {
       console.error("[v0] Error creating savings goal:", error)
       throw error
@@ -190,7 +190,7 @@ export const savingsService = {
   async updateSavingsGoal(id: number, updates: Partial<SavingsGoal>): Promise<SavingsGoal> {
     console.log("[v0] Updating savings goal:", id, updates)
     try {
-      const [updatedGoal] = await sql`
+  const [updatedGoal] = (await sql`
         UPDATE savings_goals 
         SET current_amount = COALESCE(${updates.current_amount}, current_amount),
             target_amount = COALESCE(${updates.target_amount}, target_amount),
@@ -202,8 +202,8 @@ export const savingsService = {
             updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
-      `
-      return updatedGoal
+  `) as SavingsGoal[]
+  return updatedGoal as SavingsGoal
     } catch (error) {
       console.error("[v0] Error updating savings goal:", error)
       throw error
@@ -226,11 +226,11 @@ export const debtService = {
   async getDebts(userId: string): Promise<Debt[]> {
     console.log("[v0] Getting debts for user:", userId)
     try {
-      return await sql`
+  return (await sql`
         SELECT * FROM debts 
         WHERE user_id = ${userId} AND is_active = true
         ORDER BY created_at DESC
-      `
+  `) as Debt[]
     } catch (error) {
       console.error("[v0] Error getting debts:", error)
       throw error
@@ -240,12 +240,12 @@ export const debtService = {
   async createDebt(debt: Omit<Debt, "id" | "created_at" | "updated_at">): Promise<Debt> {
     console.log("[v0] Creating debt:", debt)
     try {
-      const [newDebt] = await sql`
+  const [newDebt] = (await sql`
         INSERT INTO debts (user_id, name, original_amount, current_balance, monthly_payment, interest_rate, minimum_payment, due_date, is_active)
         VALUES (${debt.user_id}, ${debt.name}, ${debt.original_amount}, ${debt.current_balance}, ${debt.monthly_payment}, ${debt.interest_rate}, ${debt.minimum_payment}, ${debt.due_date}, ${debt.is_active})
         RETURNING *
-      `
-      return newDebt
+  `) as Debt[]
+  return newDebt as Debt
     } catch (error) {
       console.error("[v0] Error creating debt:", error)
       throw error
@@ -255,7 +255,7 @@ export const debtService = {
   async updateDebt(id: number, updates: Partial<Debt>): Promise<Debt> {
     console.log("[v0] Updating debt:", id, updates)
     try {
-      const [updatedDebt] = await sql`
+  const [updatedDebt] = (await sql`
         UPDATE debts 
         SET current_balance = COALESCE(${updates.current_balance}, current_balance),
             monthly_payment = COALESCE(${updates.monthly_payment}, monthly_payment),
@@ -266,8 +266,8 @@ export const debtService = {
             updated_at = NOW()
         WHERE id = ${id}
         RETURNING *
-      `
-      return updatedDebt
+  `) as Debt[]
+  return updatedDebt as Debt
     } catch (error) {
       console.error("[v0] Error updating debt:", error)
       throw error
@@ -327,10 +327,10 @@ export const userPreferencesService = {
   async getUserPreferences(userId: string): Promise<UserPreferences | null> {
     console.log("[v0] Getting user preferences for:", userId)
     try {
-      const [preferences] = await sql`
+  const [preferences] = (await sql`
         SELECT * FROM user_preferences WHERE user_id = ${userId}
-      `
-      return preferences || null
+  `) as UserPreferences[]
+  return (preferences as UserPreferences) || null
     } catch (error) {
       console.error("[v0] Error getting user preferences:", error)
       throw error
@@ -340,7 +340,7 @@ export const userPreferencesService = {
   async createOrUpdateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences> {
     console.log("[v0] Creating/updating user preferences:", userId, preferences)
     try {
-      const [updatedPreferences] = await sql`
+  const [updatedPreferences] = (await sql`
         INSERT INTO user_preferences (user_id, currency, theme, notifications, budget_alerts, monthly_budget)
         VALUES (${userId}, ${preferences.currency || "USD"}, ${preferences.theme || "system"}, ${preferences.notifications ?? true}, ${preferences.budget_alerts ?? true}, ${preferences.monthly_budget})
         ON CONFLICT (user_id) 
@@ -352,8 +352,8 @@ export const userPreferencesService = {
           monthly_budget = COALESCE(${preferences.monthly_budget}, user_preferences.monthly_budget),
           updated_at = NOW()
         RETURNING *
-      `
-      return updatedPreferences
+  `) as UserPreferences[]
+  return updatedPreferences as UserPreferences
     } catch (error) {
       console.error("[v0] Error creating/updating user preferences:", error)
       throw error

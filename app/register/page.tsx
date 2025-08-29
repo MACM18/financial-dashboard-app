@@ -1,20 +1,41 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { RegisterForm } from "@/components/auth/RegisterForm";
+import { LoadingSpinner } from "@/components/dashboard/LoadingSpinner";
 
 export default function RegisterPage() {
-  useEffect(() => {
-    window.location.href = "/handler/sign-up"
-  }, [])
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Redirecting to Sign Up...</h1>
-          <p className="text-muted-foreground mt-2">Please wait while we redirect you to the registration page.</p>
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-background'>
+        <div className='text-center space-y-4'>
+          <LoadingSpinner size='lg' />
+          <p className='text-muted-foreground'>Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  if (user) {
+    return null; // Will redirect to dashboard
+  }
+
+  return (
+    <div className='min-h-screen flex items-center justify-center bg-background p-4'>
+      <div className='w-full max-w-md space-y-6'>
+        <RegisterForm />
+      </div>
     </div>
-  )
+  );
 }

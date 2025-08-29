@@ -1,5 +1,15 @@
 -- Create financial dashboard tables for Neon PostgreSQL database
 
+-- Users table for authentication
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Budget categories table
 CREATE TABLE IF NOT EXISTS budgets (
     id SERIAL PRIMARY KEY,
@@ -72,6 +82,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 );
 
 -- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX IF NOT EXISTS idx_budgets_user_month ON budgets(user_id, month, year);
 CREATE INDEX IF NOT EXISTS idx_savings_goals_user_id ON savings_goals(user_id);

@@ -1,61 +1,101 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { createContext, useContext, useEffect, useState } from "react"
-import { authService, type User } from "@/lib/auth"
-
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, name: string) => Promise<void>
-  logout: () => Promise<void>
+import { createContext, useContext, useEffect, useState } from "react";
+export interface User {
+  id: string;
+  email: string;
+  displayName: string | null;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUser()
-  }, [])
+    checkUser();
+  }, []);
 
   const checkUser = async () => {
+    setLoading(true);
     try {
-      const currentUser = await authService.getCurrentUser()
-      setUser(currentUser)
+      // For demo: get userId from localStorage
+      const userId =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("user_id")
+          : null;
+      if (!userId) {
+        setUser(null);
+        return;
+      }
+      const res = await fetch(`/api/auth/user?userId=${userId}`);
+      const data = await res.json();
+      setUser(data.user || null);
     } catch (error) {
-      setUser(null)
+      setUser(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const login = async (email: string, password: string) => {
-    await authService.login(email, password)
-    await checkUser()
-  }
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Login failed");
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("user_id", data.id);
+    }
+    await checkUser();
+  };
 
   const register = async (email: string, password: string, name: string) => {
-    await authService.createAccount(email, password, name)
-    await checkUser()
-  }
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, displayName: name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Registration failed");
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("user_id", data.id);
+    }
+    await checkUser();
+  };
 
   const logout = async () => {
-    await authService.logout()
-    setUser(null)
-  }
+    await fetch("/api/auth/logout", { method: "POST" });
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("user_id");
+    }
+    setUser(null);
+  };
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }
