@@ -28,7 +28,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { userPreferencesService } from "@/lib/neon-database";
+import { LoadingSpinner } from "@/components/dashboard/LoadingSpinner";
+// import { userPreferencesService } from "@/lib/neon-database";
 
 interface UserPreferences {
   currency: string;
