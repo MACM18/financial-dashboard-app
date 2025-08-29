@@ -1,9 +1,11 @@
 /** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    "@tailwindcss/postcss": {
+      // Disable LightningCSS to avoid binary compatibility issues on Vercel
+      lightningcss: false,
+    },
   },
-}
+};
 
-export default config
+export default config;
