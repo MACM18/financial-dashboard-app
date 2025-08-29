@@ -55,20 +55,36 @@ export function BudgetTracker() {
   const currentMonth = currentDate.toLocaleString("default", { month: "long" })
   const currentYear = currentDate.getFullYear()
 
+  console.log(
+    "[v0] BudgetTracker rendering, user:",
+    user?.$id,
+    "loading:",
+    loading,
+    "budgetData length:",
+    budgetData.length,
+  )
+
   useEffect(() => {
+    console.log("[v0] BudgetTracker useEffect triggered, user:", user?.$id)
     if (user) {
       loadBudgetData()
     }
   }, [user])
 
   const loadBudgetData = async () => {
-    if (!user) return
+    if (!user) {
+      console.log("[v0] No user found, skipping budget data load")
+      return
+    }
 
     try {
+      console.log("[v0] Loading budget data for user:", user.$id)
       setLoading(true)
       const budgets = await budgetService.getBudgets(user.$id, currentMonth, currentYear)
+      console.log("[v0] Loaded budgets:", budgets)
 
       if (budgets.length === 0) {
+        console.log("[v0] No budgets found, creating default categories")
         const createdBudgets = []
         for (const category of defaultCategories) {
           const newBudget = await budgetService.createBudget({
@@ -79,12 +95,13 @@ export function BudgetTracker() {
           })
           createdBudgets.push(newBudget)
         }
+        console.log("[v0] Created default budgets:", createdBudgets)
         setBudgetData(createdBudgets)
       } else {
         setBudgetData(budgets)
       }
     } catch (error) {
-      console.error("Error loading budget data:", error)
+      console.error("[v0] Error loading budget data:", error)
     } finally {
       setLoading(false)
     }
@@ -153,16 +170,19 @@ export function BudgetTracker() {
   const remainingBudget = totalIncome - totalExpenses
 
   if (loading) {
+    console.log("[v0] BudgetTracker showing loading state")
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-64">
           <LoadingSpinner />
+          <span className="ml-2 text-muted-foreground">Loading budget data...</span>
         </CardContent>
       </Card>
     )
   }
 
   if (budgetData.length === 0) {
+    console.log("[v0] BudgetTracker showing empty state")
     return (
       <EmptyState
         icon={<Plus className="h-6 w-6" />}
@@ -170,11 +190,16 @@ export function BudgetTracker() {
         description="Start by adding your first budget category to track your income and expenses."
         action={{
           label: "Add Category",
-          onClick: () => console.log("Add category"),
+          onClick: () => {
+            console.log("[v0] Add category clicked")
+            // TODO: Implement add category functionality
+          },
         }}
       />
     )
   }
+
+  console.log("[v0] BudgetTracker rendering full component with", budgetData.length, "items")
 
   return (
     <Card>

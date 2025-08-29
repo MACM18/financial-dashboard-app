@@ -197,3 +197,98 @@ export const debtService = {
     }
   },
 }
+
+// Dashboard Statistics Operations
+export const dashboardService = {
+  async getDashboardStats(userId: string) {
+    try {
+      const currentDate = new Date()
+      const currentMonth = currentDate.toLocaleString("default", { month: "long" })
+      const currentYear = currentDate.getFullYear()
+
+      const [budgets, savingsGoals, debts] = await Promise.all([
+        budgetService.getBudgets(userId, currentMonth, currentYear),
+        savingsService.getSavingsGoals(userId),
+        debtService.getDebts(userId),
+      ])
+
+      // Calculate aggregated statistics
+      const totalIncome = budgets
+        .filter((budget: any) => budget.category === "Income")
+        .reduce((sum: number, budget: any) => sum + budget.budgetedAmount, 0)
+
+      const totalSpending = budgets
+        .filter((budget: any) => budget.category !== "Income")
+        .reduce((sum: number, budget: any) => sum + budget.actualAmount, 0)
+
+      const totalSaved = savingsGoals.reduce((sum: number, goal: any) => sum + goal.currentAmount, 0)
+      const totalSavingsTarget = savingsGoals.reduce((sum: number, goal: any) => sum + goal.targetAmount, 0)
+      const totalDebt = debts.reduce((sum: number, debt: any) => sum + debt.currentBalance, 0)
+
+      return {
+        totalIncome,
+        totalSpending,
+        totalSaved,
+        totalSavingsTarget,
+        totalDebt,
+        budgetCount: budgets.length,
+        savingsGoalsCount: savingsGoals.length,
+        debtsCount: debts.length,
+        savingsProgress: totalSavingsTarget > 0 ? (totalSaved / totalSavingsTarget) * 100 : 0,
+        budgetUtilization: totalIncome > 0 ? (totalSpending / totalIncome) * 100 : 0,
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error)
+      throw error
+    }
+  },
+}
+
+// User Preferences Operations
+export const userPreferencesService = {
+  async getUserPreferences(userId: string) {
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, "user_preferences", [Query.equal("userId", userId)])
+      return response.documents[0] || null
+    } catch (error) {
+      console.error("Error fetching user preferences:", error)
+      throw error
+    }
+  },
+
+  async createUserPreferences(preferencesData: {
+    userId: string
+    currency: string
+    theme: string
+    notifications: boolean
+    budgetAlerts: boolean
+    monthlyBudget?: number
+  }) {
+    try {
+      const response = await databases.createDocument(DATABASE_ID, "user_preferences", "unique()", preferencesData)
+      return response
+    } catch (error) {
+      console.error("Error creating user preferences:", error)
+      throw error
+    }
+  },
+
+  async updateUserPreferences(
+    documentId: string,
+    updates: {
+      currency?: string
+      theme?: string
+      notifications?: boolean
+      budgetAlerts?: boolean
+      monthlyBudget?: number
+    },
+  ) {
+    try {
+      const response = await databases.updateDocument(DATABASE_ID, "user_preferences", documentId, updates)
+      return response
+    } catch (error) {
+      console.error("Error updating user preferences:", error)
+      throw error
+    }
+  },
+}

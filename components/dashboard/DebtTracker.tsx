@@ -81,6 +81,7 @@ export function DebtTracker() {
   const [loading, setLoading] = useState(true)
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false)
   const [newDebt, setNewDebt] = useState({
     name: "",
     currentBalance: "",
@@ -92,6 +93,8 @@ export function DebtTracker() {
     type: "Credit Card",
   })
 
+  console.log("[v0] DebtTracker rendering, user:", user?.$id, "loading:", loading, "debts:", debts.length)
+
   useEffect(() => {
     if (user) {
       loadDebts()
@@ -102,20 +105,26 @@ export function DebtTracker() {
     if (!user) return
 
     try {
+      console.log("[v0] Loading debts for user:", user.$id)
       setLoading(true)
       const debtData = await debtService.getDebts(user.$id)
+      console.log("[v0] Loaded debts:", debtData)
       setDebts(debtData)
     } catch (error) {
-      console.error("Error loading debts:", error)
+      console.error("[v0] Error loading debts:", error)
     } finally {
       setLoading(false)
     }
   }
 
   const createDebt = async () => {
-    if (!user || !newDebt.name || !newDebt.currentBalance || !newDebt.monthlyPayment) return
+    if (!user || !newDebt.name || !newDebt.currentBalance || !newDebt.monthlyPayment) {
+      console.log("[v0] Cannot create debt - missing data:", { user: !!user, newDebt })
+      return
+    }
 
     try {
+      console.log("[v0] Creating debt:", newDebt)
       const debtData = {
         userId: user.$id,
         name: newDebt.name,
@@ -130,6 +139,7 @@ export function DebtTracker() {
       }
 
       const createdDebt = await debtService.createDebt(debtData)
+      console.log("[v0] Created debt:", createdDebt)
       setDebts((prev) => [...prev, createdDebt])
       setNewDebt({
         name: "",
@@ -143,8 +153,14 @@ export function DebtTracker() {
       })
       setIsAddDialogOpen(false)
     } catch (error) {
-      console.error("Error creating debt:", error)
+      console.error("[v0] Error creating debt:", error)
     }
+  }
+
+  const handleViewScheduleClick = (debt: Debt) => {
+    console.log("[v0] View schedule clicked for debt:", debt.name)
+    setSelectedDebt(debt)
+    setIsScheduleDialogOpen(true)
   }
 
   const formatCurrency = (amount: number) => {
@@ -157,7 +173,7 @@ export function DebtTracker() {
   const togglePaymentStatus = (debtId: string, paymentId: string) => {
     // This would typically update payment status in a separate payments collection
     // For now, we'll just update the UI state
-    console.log(`Toggle payment ${paymentId} for debt ${debtId}`)
+    console.log(`[v0] Toggle payment ${paymentId} for debt ${debtId}`)
   }
 
   const getDebtProgress = (debt: Debt) => {
@@ -174,6 +190,7 @@ export function DebtTracker() {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner />
+        <span className="ml-2 text-muted-foreground">Loading debts...</span>
       </div>
     )
   }
@@ -186,7 +203,10 @@ export function DebtTracker() {
         description="Add your first debt to start tracking your repayment progress."
         action={{
           label: "Add Debt",
-          onClick: () => setIsAddDialogOpen(true),
+          onClick: () => {
+            console.log("[v0] Add Debt clicked from empty state")
+            setIsAddDialogOpen(true)
+          },
         }}
       />
     )
@@ -257,7 +277,12 @@ export function DebtTracker() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button
+              onClick={() => {
+                console.log("[v0] Add Debt button clicked")
+                setIsAddDialogOpen(true)
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Debt
             </Button>
@@ -328,6 +353,22 @@ export function DebtTracker() {
                   onChange={(e) => setNewDebt((prev) => ({ ...prev, minimumPayment: e.target.value }))}
                 />
               </div>
+              <div>
+                <Label htmlFor="debtType">Debt Type</Label>
+                <select
+                  id="debtType"
+                  className="w-full p-2 border rounded-md"
+                  value={newDebt.type}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, type: e.target.value }))}
+                >
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Student Loan">Student Loan</option>
+                  <option value="Personal Loan">Personal Loan</option>
+                  <option value="Mortgage">Mortgage</option>
+                  <option value="Auto Loan">Auto Loan</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
               <Button className="w-full" onClick={createDebt}>
                 Add Debt
               </Button>
@@ -345,8 +386,7 @@ export function DebtTracker() {
 
           return (
             <Card key={debt.$id} className="relative overflow-hidden">
-              {/* Color accent bar */}
-              <div className={cn("absolute top-0 left-0 right-0 h-1", debtTypeColors[debt.type] || "bg-gray-500")} />
+              <div className={cn("absolute top-0 left-0 right-0 h-1", debtTypeColors["Credit Card"] || "bg-red-500")} />
 
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -403,62 +443,66 @@ export function DebtTracker() {
                 </div>
 
                 {/* View Details Button */}
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full bg-transparent" onClick={() => setSelectedDebt(debt)}>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      View Payment Schedule
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl">
-                    <DialogHeader>
-                      <DialogTitle>Payment Schedule: {debt.name}</DialogTitle>
-                      <DialogDescription>Track your monthly payments and mark them as completed.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">Paid</TableHead>
-                            <TableHead>Month</TableHead>
-                            <TableHead>Starting Balance</TableHead>
-                            <TableHead>Payment Made</TableHead>
-                            <TableHead>Remaining Balance</TableHead>
-                            <TableHead>Due Date</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {paymentSchedule.map((payment) => (
-                            <TableRow key={payment.id} className={payment.isPaid ? "bg-muted/50" : ""}>
-                              <TableCell>
-                                <Checkbox
-                                  checked={payment.isPaid}
-                                  onCheckedChange={() => togglePaymentStatus(debt.$id, payment.id)}
-                                />
-                              </TableCell>
-                              <TableCell className="font-medium">{payment.month}</TableCell>
-                              <TableCell>{formatCurrency(payment.startingBalance)}</TableCell>
-                              <TableCell className="text-red-600 dark:text-red-400">
-                                -{formatCurrency(payment.paymentAmount)}
-                              </TableCell>
-                              <TableCell className="font-semibold">
-                                {formatCurrency(payment.remainingBalance)}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {new Date(payment.dueDate).toLocaleDateString()}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  onClick={() => handleViewScheduleClick(debt)}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  View Payment Schedule
+                </Button>
               </CardContent>
             </Card>
           )
         })}
       </div>
+
+      {/* Payment Schedule Dialog */}
+      <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Payment Schedule: {selectedDebt?.name}</DialogTitle>
+            <DialogDescription>Track your monthly payments and mark them as completed.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedDebt && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">Paid</TableHead>
+                    <TableHead>Month</TableHead>
+                    <TableHead>Starting Balance</TableHead>
+                    <TableHead>Payment Made</TableHead>
+                    <TableHead>Remaining Balance</TableHead>
+                    <TableHead>Due Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {generatePaymentSchedule(selectedDebt).map((payment) => (
+                    <TableRow key={payment.id} className={payment.isPaid ? "bg-muted/50" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={payment.isPaid}
+                          onCheckedChange={() => togglePaymentStatus(selectedDebt.$id, payment.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{payment.month}</TableCell>
+                      <TableCell>{formatCurrency(payment.startingBalance)}</TableCell>
+                      <TableCell className="text-red-600 dark:text-red-400">
+                        -{formatCurrency(payment.paymentAmount)}
+                      </TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(payment.remainingBalance)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(payment.dueDate).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Overall Progress */}
       <Card>

@@ -49,6 +49,7 @@ export function SavingsGoals() {
   const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null)
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false)
   const [updateAmount, setUpdateAmount] = useState("")
   const [newGoal, setNewGoal] = useState({
     name: "",
@@ -57,6 +58,16 @@ export function SavingsGoals() {
     category: "Other",
     targetDate: "",
   })
+
+  console.log("[v0] SavingsGoals rendering, user:", user?.$id, "loading:", loading, "goals:", savingsGoals.length)
+  console.log(
+    "[v0] Dialog states - Add:",
+    isAddDialogOpen,
+    "Update:",
+    isUpdateDialogOpen,
+    "Editing goal:",
+    editingGoal?.$id,
+  )
 
   useEffect(() => {
     if (user) {
@@ -68,20 +79,26 @@ export function SavingsGoals() {
     if (!user) return
 
     try {
+      console.log("[v0] Loading savings goals for user:", user.$id)
       setLoading(true)
       const goals = await savingsService.getSavingsGoals(user.$id)
+      console.log("[v0] Loaded savings goals:", goals)
       setSavingsGoals(goals)
     } catch (error) {
-      console.error("Error loading savings goals:", error)
+      console.error("[v0] Error loading savings goals:", error)
     } finally {
       setLoading(false)
     }
   }
 
   const createSavingsGoal = async () => {
-    if (!user || !newGoal.name || !newGoal.targetAmount || !newGoal.monthlyContribution) return
+    if (!user || !newGoal.name || !newGoal.targetAmount || !newGoal.monthlyContribution) {
+      console.log("[v0] Cannot create goal - missing data:", { user: !!user, newGoal })
+      return
+    }
 
     try {
+      console.log("[v0] Creating savings goal:", newGoal)
       const goalData = {
         userId: user.$id,
         name: newGoal.name,
@@ -95,11 +112,46 @@ export function SavingsGoals() {
       }
 
       const createdGoal = await savingsService.createSavingsGoal(goalData)
+      console.log("[v0] Created savings goal:", createdGoal)
       setSavingsGoals((prev) => [...prev, createdGoal])
       setNewGoal({ name: "", targetAmount: "", monthlyContribution: "", category: "Other", targetDate: "" })
       setIsAddDialogOpen(false)
     } catch (error) {
-      console.error("Error creating savings goal:", error)
+      console.error("[v0] Error creating savings goal:", error)
+    }
+  }
+
+  const handleUpdateProgressClick = (goal: SavingsGoal) => {
+    console.log("[v0] Update progress clicked for goal:", goal.name)
+    setEditingGoal(goal)
+    setUpdateAmount("")
+    setIsUpdateDialogOpen(true)
+  }
+
+  const updateGoalProgress = async () => {
+    if (!editingGoal || !updateAmount) {
+      console.log("[v0] Cannot update progress - missing data:", { editingGoal: !!editingGoal, updateAmount })
+      return
+    }
+
+    try {
+      console.log("[v0] Updating goal progress:", editingGoal.name, "amount:", updateAmount)
+      const additionalAmount = Number.parseFloat(updateAmount)
+      const newCurrentAmount = editingGoal.currentAmount + additionalAmount
+      const isCompleted = newCurrentAmount >= editingGoal.targetAmount
+
+      const updatedGoal = await savingsService.updateSavingsGoal(editingGoal.$id, {
+        currentAmount: newCurrentAmount,
+        isCompleted,
+      })
+
+      console.log("[v0] Updated goal:", updatedGoal)
+      setSavingsGoals((prev) => prev.map((g) => (g.$id === editingGoal.$id ? updatedGoal : g)))
+      setEditingGoal(null)
+      setUpdateAmount("")
+      setIsUpdateDialogOpen(false)
+    } catch (error) {
+      console.error("[v0] Error updating goal progress:", error)
     }
   }
 
@@ -121,27 +173,6 @@ export function SavingsGoals() {
     return Math.ceil(remaining / monthlyContribution)
   }
 
-  const updateGoalProgress = async (goalId: string, additionalAmount: number) => {
-    try {
-      const goal = savingsGoals.find((g) => g.$id === goalId)
-      if (!goal) return
-
-      const newCurrentAmount = goal.currentAmount + additionalAmount
-      const isCompleted = newCurrentAmount >= goal.targetAmount
-
-      const updatedGoal = await savingsService.updateSavingsGoal(goalId, {
-        currentAmount: newCurrentAmount,
-        isCompleted,
-      })
-
-      setSavingsGoals((prev) => prev.map((g) => (g.$id === goalId ? updatedGoal : g)))
-      setEditingGoal(null)
-      setUpdateAmount("")
-    } catch (error) {
-      console.error("Error updating goal progress:", error)
-    }
-  }
-
   const getProgressColor = (percentage: number) => {
     if (percentage >= 100) return "bg-green-500"
     if (percentage >= 75) return "bg-blue-500"
@@ -157,6 +188,7 @@ export function SavingsGoals() {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner />
+        <span className="ml-2 text-muted-foreground">Loading savings goals...</span>
       </div>
     )
   }
@@ -169,7 +201,10 @@ export function SavingsGoals() {
         description="Create your first savings goal to start tracking your financial progress."
         action={{
           label: "Add Goal",
-          onClick: () => setIsAddDialogOpen(true),
+          onClick: () => {
+            console.log("[v0] Add Goal clicked from empty state")
+            setIsAddDialogOpen(true)
+          },
         }}
       />
     )
@@ -226,7 +261,12 @@ export function SavingsGoals() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button
+              onClick={() => {
+                console.log("[v0] Add Goal button clicked")
+                setIsAddDialogOpen(true)
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Goal
             </Button>
@@ -375,49 +415,53 @@ export function SavingsGoals() {
                   </div>
                 )}
 
-                {/* Update Progress Button */}
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full bg-transparent" onClick={() => setEditingGoal(goal)}>
-                      <Edit2 className="h-4 w-4 mr-2" />
-                      Update Progress
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Update Progress: {goal.name}</DialogTitle>
-                      <DialogDescription>Add money to your savings goal.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="updateAmount">Amount to Add</Label>
-                        <Input
-                          id="updateAmount"
-                          type="number"
-                          placeholder="100"
-                          value={updateAmount}
-                          onChange={(e) => setUpdateAmount(e.target.value)}
-                        />
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Current: {formatCurrency(goal.currentAmount)} → New:{" "}
-                        {formatCurrency(goal.currentAmount + (Number.parseFloat(updateAmount) || 0))}
-                      </div>
-                      <Button
-                        className="w-full"
-                        onClick={() => updateGoalProgress(goal.$id, Number.parseFloat(updateAmount) || 0)}
-                        disabled={!updateAmount || Number.parseFloat(updateAmount) <= 0}
-                      >
-                        Update Progress
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  onClick={() => handleUpdateProgressClick(goal)}
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Update Progress
+                </Button>
               </CardContent>
             </Card>
           )
         })}
       </div>
+
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Progress: {editingGoal?.name}</DialogTitle>
+            <DialogDescription>Add money to your savings goal.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="updateAmount">Amount to Add</Label>
+              <Input
+                id="updateAmount"
+                type="number"
+                placeholder="100"
+                value={updateAmount}
+                onChange={(e) => setUpdateAmount(e.target.value)}
+              />
+            </div>
+            {editingGoal && (
+              <div className="text-sm text-muted-foreground">
+                Current: {formatCurrency(editingGoal.currentAmount)} → New:{" "}
+                {formatCurrency(editingGoal.currentAmount + (Number.parseFloat(updateAmount) || 0))}
+              </div>
+            )}
+            <Button
+              className="w-full"
+              onClick={updateGoalProgress}
+              disabled={!updateAmount || Number.parseFloat(updateAmount) <= 0}
+            >
+              Update Progress
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Overall Progress */}
       <Card>
