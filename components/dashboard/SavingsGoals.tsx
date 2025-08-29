@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,66 +17,91 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Target, TrendingUp, Calendar, DollarSign, Edit2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LoadingSpinner } from "./LoadingSpinner"
+import { EmptyState } from "./EmptyState"
+import { useAuth } from "@/contexts/AuthContext"
+import { savingsService } from "@/lib/database"
 
 interface SavingsGoal {
-  id: string
+  $id: string
   name: string
   targetAmount: number
   currentAmount: number
   monthlyContribution: number
   targetDate?: string
   category: string
-  color: string
+  isCompleted: boolean
 }
 
-// Mock data - will be replaced with Appwrite data later
-const initialSavingsGoals: SavingsGoal[] = [
-  {
-    id: "1",
-    name: "Emergency Fund",
-    targetAmount: 10000,
-    currentAmount: 6500,
-    monthlyContribution: 500,
-    targetDate: "2024-12-31",
-    category: "Emergency",
-    color: "bg-red-500",
-  },
-  {
-    id: "2",
-    name: "Crunchyroll Yearly Plan",
-    targetAmount: 120,
-    currentAmount: 85,
-    monthlyContribution: 10,
-    targetDate: "2024-06-01",
-    category: "Entertainment",
-    color: "bg-orange-500",
-  },
-  {
-    id: "3",
-    name: "Tech Upgrade Fund",
-    targetAmount: 2500,
-    currentAmount: 1200,
-    monthlyContribution: 200,
-    targetDate: "2024-08-15",
-    category: "Technology",
-    color: "bg-blue-500",
-  },
-  {
-    id: "4",
-    name: "Vacation Fund",
-    targetAmount: 3000,
-    currentAmount: 800,
-    monthlyContribution: 150,
-    category: "Travel",
-    color: "bg-green-500",
-  },
-]
+const categoryColors: { [key: string]: string } = {
+  Emergency: "bg-red-500",
+  Entertainment: "bg-orange-500",
+  Technology: "bg-blue-500",
+  Travel: "bg-green-500",
+  Education: "bg-purple-500",
+  Health: "bg-pink-500",
+  Other: "bg-gray-500",
+}
 
 export function SavingsGoals() {
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(initialSavingsGoals)
+  const { user } = useAuth()
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
+  const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null)
   const [updateAmount, setUpdateAmount] = useState("")
+  const [newGoal, setNewGoal] = useState({
+    name: "",
+    targetAmount: "",
+    monthlyContribution: "",
+    category: "Other",
+    targetDate: "",
+  })
+
+  useEffect(() => {
+    if (user) {
+      loadSavingsGoals()
+    }
+  }, [user])
+
+  const loadSavingsGoals = async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      const goals = await savingsService.getSavingsGoals(user.$id)
+      setSavingsGoals(goals)
+    } catch (error) {
+      console.error("Error loading savings goals:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createSavingsGoal = async () => {
+    if (!user || !newGoal.name || !newGoal.targetAmount || !newGoal.monthlyContribution) return
+
+    try {
+      const goalData = {
+        userId: user.$id,
+        name: newGoal.name,
+        targetAmount: Number.parseFloat(newGoal.targetAmount),
+        currentAmount: 0,
+        monthlyContribution: Number.parseFloat(newGoal.monthlyContribution),
+        category: newGoal.category,
+        targetDate: newGoal.targetDate || undefined,
+        isCompleted: false,
+        createdAt: new Date().toISOString(),
+      }
+
+      const createdGoal = await savingsService.createSavingsGoal(goalData)
+      setSavingsGoals((prev) => [...prev, createdGoal])
+      setNewGoal({ name: "", targetAmount: "", monthlyContribution: "", category: "Other", targetDate: "" })
+      setIsAddDialogOpen(false)
+    } catch (error) {
+      console.error("Error creating savings goal:", error)
+    }
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -96,14 +121,25 @@ export function SavingsGoals() {
     return Math.ceil(remaining / monthlyContribution)
   }
 
-  const updateGoalProgress = (goalId: string, additionalAmount: number) => {
-    setSavingsGoals((prev) =>
-      prev.map((goal) =>
-        goal.id === goalId ? { ...goal, currentAmount: goal.currentAmount + additionalAmount } : goal,
-      ),
-    )
-    setEditingGoal(null)
-    setUpdateAmount("")
+  const updateGoalProgress = async (goalId: string, additionalAmount: number) => {
+    try {
+      const goal = savingsGoals.find((g) => g.$id === goalId)
+      if (!goal) return
+
+      const newCurrentAmount = goal.currentAmount + additionalAmount
+      const isCompleted = newCurrentAmount >= goal.targetAmount
+
+      const updatedGoal = await savingsService.updateSavingsGoal(goalId, {
+        currentAmount: newCurrentAmount,
+        isCompleted,
+      })
+
+      setSavingsGoals((prev) => prev.map((g) => (g.$id === goalId ? updatedGoal : g)))
+      setEditingGoal(null)
+      setUpdateAmount("")
+    } catch (error) {
+      console.error("Error updating goal progress:", error)
+    }
   }
 
   const getProgressColor = (percentage: number) => {
@@ -116,6 +152,28 @@ export function SavingsGoals() {
   const totalSaved = savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0)
   const totalTarget = savingsGoals.reduce((sum, goal) => sum + goal.targetAmount, 0)
   const totalMonthlyContributions = savingsGoals.reduce((sum, goal) => sum + goal.monthlyContribution, 0)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (savingsGoals.length === 0) {
+    return (
+      <EmptyState
+        icon={<Target className="h-6 w-6" />}
+        title="No savings goals yet"
+        description="Create your first savings goal to start tracking your financial progress."
+        action={{
+          label: "Add Goal",
+          onClick: () => setIsAddDialogOpen(true),
+        }}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -181,21 +239,62 @@ export function SavingsGoals() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="goalName">Goal Name</Label>
-                <Input id="goalName" placeholder="e.g., Emergency Fund" />
+                <Input
+                  id="goalName"
+                  placeholder="e.g., Emergency Fund"
+                  value={newGoal.name}
+                  onChange={(e) => setNewGoal((prev) => ({ ...prev, name: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="targetAmount">Target Amount</Label>
-                <Input id="targetAmount" type="number" placeholder="10000" />
+                <Input
+                  id="targetAmount"
+                  type="number"
+                  placeholder="10000"
+                  value={newGoal.targetAmount}
+                  onChange={(e) => setNewGoal((prev) => ({ ...prev, targetAmount: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="monthlyContribution">Monthly Contribution</Label>
-                <Input id="monthlyContribution" type="number" placeholder="500" />
+                <Input
+                  id="monthlyContribution"
+                  type="number"
+                  placeholder="500"
+                  value={newGoal.monthlyContribution}
+                  onChange={(e) => setNewGoal((prev) => ({ ...prev, monthlyContribution: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <select
+                  id="category"
+                  className="w-full p-2 border rounded-md"
+                  value={newGoal.category}
+                  onChange={(e) => setNewGoal((prev) => ({ ...prev, category: e.target.value }))}
+                >
+                  <option value="Emergency">Emergency</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="Technology">Technology</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Education">Education</option>
+                  <option value="Health">Health</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               <div>
                 <Label htmlFor="targetDate">Target Date (Optional)</Label>
-                <Input id="targetDate" type="date" />
+                <Input
+                  id="targetDate"
+                  type="date"
+                  value={newGoal.targetDate}
+                  onChange={(e) => setNewGoal((prev) => ({ ...prev, targetDate: e.target.value }))}
+                />
               </div>
-              <Button className="w-full">Create Goal</Button>
+              <Button className="w-full" onClick={createSavingsGoal}>
+                Create Goal
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -206,12 +305,14 @@ export function SavingsGoals() {
         {savingsGoals.map((goal) => {
           const progressPercentage = getProgressPercentage(goal.currentAmount, goal.targetAmount)
           const monthsToGoal = getMonthsToGoal(goal.currentAmount, goal.targetAmount, goal.monthlyContribution)
-          const isCompleted = progressPercentage >= 100
+          const isCompleted = goal.isCompleted || progressPercentage >= 100
 
           return (
-            <Card key={goal.id} className={cn("relative overflow-hidden", isCompleted && "ring-2 ring-green-500")}>
+            <Card key={goal.$id} className={cn("relative overflow-hidden", isCompleted && "ring-2 ring-green-500")}>
               {/* Color accent bar */}
-              <div className={cn("absolute top-0 left-0 right-0 h-1", goal.color)} />
+              <div
+                className={cn("absolute top-0 left-0 right-0 h-1", categoryColors[goal.category] || "bg-gray-500")}
+              />
 
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -304,7 +405,7 @@ export function SavingsGoals() {
                       </div>
                       <Button
                         className="w-full"
-                        onClick={() => updateGoalProgress(goal.id, Number.parseFloat(updateAmount) || 0)}
+                        onClick={() => updateGoalProgress(goal.$id, Number.parseFloat(updateAmount) || 0)}
                         disabled={!updateAmount || Number.parseFloat(updateAmount) <= 0}
                       >
                         Update Progress

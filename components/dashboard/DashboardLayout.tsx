@@ -46,19 +46,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Main content */}
         <div className="lg:pl-64">
-          {/* Top bar */}
-          <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border">
-            <div className="flex items-center justify-between px-4 lg:px-6 py-4">
-              <div className="lg:hidden w-10" /> {/* Spacer for mobile menu button */}
-              <div className="flex-1" />
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+            <div className="flex items-center justify-end px-4 lg:px-6 py-3">
               <ThemeToggle />
             </div>
           </div>
 
-          {/* Page content */}
-          <main className="p-4 lg:p-6">
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </main>
+          <main className="p-4 lg:p-6">{children}</main>
         </div>
       </div>
     </ErrorBoundary>

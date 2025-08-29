@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,9 +10,11 @@ import { Edit2, Check, X, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LoadingSpinner } from "./LoadingSpinner"
 import { EmptyState } from "./EmptyState"
+import { useAuth } from "@/contexts/AuthContext"
+import { budgetService } from "@/lib/database"
 
 interface BudgetItem {
-  id: string
+  $id: string
   category: string
   budgetedAmount: number
   actualAmount: number
@@ -20,66 +22,76 @@ interface BudgetItem {
   type: "income" | "expense"
 }
 
-// Mock data - will be replaced with Appwrite data later
-const initialBudgetData: BudgetItem[] = [
+const defaultCategories = [
+  { category: "Income", budgetedAmount: 0, actualAmount: 0, notes: "Monthly salary", type: "income" as const },
   {
-    id: "1",
-    category: "Income",
-    budgetedAmount: 4200,
-    actualAmount: 4200,
-    notes: "Monthly salary",
-    type: "income",
-  },
-  {
-    id: "2",
     category: "Subscriptions",
-    budgetedAmount: 150,
-    actualAmount: 147,
-    notes: "Netflix, Spotify, etc.",
-    type: "expense",
-  },
-  {
-    id: "3",
-    category: "Food",
-    budgetedAmount: 600,
-    actualAmount: 523,
-    notes: "Groceries and dining",
-    type: "expense",
-  },
-  {
-    id: "4",
-    category: "Travel",
-    budgetedAmount: 300,
+    budgetedAmount: 0,
     actualAmount: 0,
-    notes: "Gas and transportation",
-    type: "expense",
+    notes: "Netflix, Spotify, etc.",
+    type: "expense" as const,
   },
+  { category: "Food", budgetedAmount: 0, actualAmount: 0, notes: "Groceries and dining", type: "expense" as const },
+  { category: "Travel", budgetedAmount: 0, actualAmount: 0, notes: "Gas and transportation", type: "expense" as const },
   {
-    id: "5",
     category: "Debt Repayment",
-    budgetedAmount: 500,
-    actualAmount: 500,
+    budgetedAmount: 0,
+    actualAmount: 0,
     notes: "Credit card payment",
-    type: "expense",
+    type: "expense" as const,
   },
-  {
-    id: "6",
-    category: "Savings",
-    budgetedAmount: 800,
-    actualAmount: 650,
-    notes: "Emergency fund",
-    type: "expense",
-  },
+  { category: "Savings", budgetedAmount: 0, actualAmount: 0, notes: "Emergency fund", type: "expense" as const },
 ]
 
 export function BudgetTracker() {
-  const [budgetData, setBudgetData] = useState<BudgetItem[]>(initialBudgetData)
+  const { user } = useAuth()
+  const [budgetData, setBudgetData] = useState<BudgetItem[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Partial<BudgetItem>>({})
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  const currentDate = new Date()
+  const currentMonth = currentDate.toLocaleString("default", { month: "long" })
+  const currentYear = currentDate.getFullYear()
+
+  useEffect(() => {
+    if (user) {
+      loadBudgetData()
+    }
+  }, [user])
+
+  const loadBudgetData = async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      const budgets = await budgetService.getBudgets(user.$id, currentMonth, currentYear)
+
+      if (budgets.length === 0) {
+        const createdBudgets = []
+        for (const category of defaultCategories) {
+          const newBudget = await budgetService.createBudget({
+            userId: user.$id,
+            month: currentMonth,
+            year: currentYear,
+            ...category,
+          })
+          createdBudgets.push(newBudget)
+        }
+        setBudgetData(createdBudgets)
+      } else {
+        setBudgetData(budgets)
+      }
+    } catch (error) {
+      console.error("Error loading budget data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const startEditing = (item: BudgetItem) => {
-    setEditingId(item.id)
+    setEditingId(item.$id)
     setEditValues({
       budgetedAmount: item.budgetedAmount,
       actualAmount: item.actualAmount,
@@ -90,25 +102,22 @@ export function BudgetTracker() {
   const saveEdit = async () => {
     if (!editingId) return
 
-    setLoading(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      setSaving(true)
+      const updatedBudget = await budgetService.updateBudget(editingId, {
+        budgetedAmount: editValues.budgetedAmount,
+        actualAmount: editValues.actualAmount,
+        notes: editValues.notes,
+      })
 
-    setBudgetData((prev) =>
-      prev.map((item) =>
-        item.id === editingId
-          ? {
-              ...item,
-              budgetedAmount: editValues.budgetedAmount ?? item.budgetedAmount,
-              actualAmount: editValues.actualAmount ?? item.actualAmount,
-              notes: editValues.notes ?? item.notes,
-            }
-          : item,
-      ),
-    )
-    setEditingId(null)
-    setEditValues({})
-    setLoading(false)
+      setBudgetData((prev) => prev.map((item) => (item.$id === editingId ? updatedBudget : item)))
+      setEditingId(null)
+      setEditValues({})
+    } catch (error) {
+      console.error("Error saving budget:", error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const cancelEdit = () => {
@@ -143,6 +152,16 @@ export function BudgetTracker() {
 
   const remainingBudget = totalIncome - totalExpenses
 
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-64">
+          <LoadingSpinner />
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (budgetData.length === 0) {
     return (
       <EmptyState
@@ -163,7 +182,9 @@ export function BudgetTracker() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Monthly Budget Tracker</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Track your income and expenses for this month</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Track your income and expenses for {currentMonth} {currentYear}
+            </p>
           </div>
           <Button variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
@@ -211,7 +232,7 @@ export function BudgetTracker() {
               </thead>
               <tbody>
                 {budgetData.map((item) => (
-                  <tr key={item.id} className="border-b border-border/50">
+                  <tr key={item.$id} className="border-b border-border/50">
                     <td className="py-3 px-2">
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">{item.category}</span>
@@ -221,7 +242,7 @@ export function BudgetTracker() {
                       </div>
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.id ? (
+                      {editingId === item.$id ? (
                         <Input
                           type="number"
                           value={editValues.budgetedAmount ?? ""}
@@ -232,14 +253,14 @@ export function BudgetTracker() {
                             }))
                           }
                           className="w-24"
-                          disabled={loading}
+                          disabled={saving}
                         />
                       ) : (
                         <span className="font-medium">{formatCurrency(item.budgetedAmount)}</span>
                       )}
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.id ? (
+                      {editingId === item.$id ? (
                         <Input
                           type="number"
                           value={editValues.actualAmount ?? ""}
@@ -250,7 +271,7 @@ export function BudgetTracker() {
                             }))
                           }
                           className="w-24"
-                          disabled={loading}
+                          disabled={saving}
                         />
                       ) : (
                         <span className="font-medium">{formatCurrency(item.actualAmount)}</span>
@@ -268,7 +289,7 @@ export function BudgetTracker() {
                       </div>
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.id ? (
+                      {editingId === item.$id ? (
                         <Input
                           value={editValues.notes ?? ""}
                           onChange={(e) =>
@@ -279,19 +300,19 @@ export function BudgetTracker() {
                           }
                           className="w-32"
                           placeholder="Add notes..."
-                          disabled={loading}
+                          disabled={saving}
                         />
                       ) : (
                         <span className="text-sm text-muted-foreground">{item.notes || "No notes"}</span>
                       )}
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.id ? (
+                      {editingId === item.$id ? (
                         <div className="flex items-center space-x-1">
-                          <Button variant="ghost" size="sm" onClick={saveEdit} disabled={loading}>
-                            {loading ? <LoadingSpinner size="sm" /> : <Check className="h-3 w-3" />}
+                          <Button variant="ghost" size="sm" onClick={saveEdit} disabled={saving}>
+                            {saving ? <LoadingSpinner size="sm" /> : <Check className="h-3 w-3" />}
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={loading}>
+                          <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={saving}>
                             <X className="h-3 w-3" />
                           </Button>
                         </div>

@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID } from "appwrite"
+import { Client, Account, Databases, ID, Query } from "appwrite"
 
 const client = new Client()
 
@@ -9,7 +9,7 @@ client
 export const account = new Account(client)
 export const databases = new Databases(client)
 
-export { ID }
+export { ID, Query }
 
 // Database and collection IDs
 export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || ""

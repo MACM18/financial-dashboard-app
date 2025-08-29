@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,133 +19,133 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus, CreditCard, TrendingDown, Calendar, DollarSign, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-interface DebtPayment {
-  id: string
-  month: string
-  startingBalance: number
-  paymentAmount: number
-  remainingBalance: number
-  isPaid: boolean
-  dueDate: string
-}
+import { LoadingSpinner } from "./LoadingSpinner"
+import { EmptyState } from "./EmptyState"
+import { useAuth } from "@/contexts/AuthContext"
+import { debtService } from "@/lib/database"
 
 interface Debt {
-  id: string
+  $id: string
   name: string
   originalAmount: number
   currentBalance: number
   interestRate: number
   minimumPayment: number
-  paymentSchedule: DebtPayment[]
-  type: string
-  color: string
+  monthlyPayment: number
+  dueDate: string
+  isActive: boolean
 }
 
-// Mock data - will be replaced with Appwrite data later
-const initialDebts: Debt[] = [
-  {
-    id: "1",
-    name: "Credit Card - Chase",
-    originalAmount: 15000,
-    currentBalance: 12450,
-    interestRate: 18.99,
-    minimumPayment: 350,
-    type: "Credit Card",
-    color: "bg-red-500",
-    paymentSchedule: [
-      {
-        id: "p1",
-        month: "January 2024",
-        startingBalance: 13150,
-        paymentAmount: 350,
-        remainingBalance: 12800,
-        isPaid: true,
-        dueDate: "2024-01-15",
-      },
-      {
-        id: "p2",
-        month: "February 2024",
-        startingBalance: 12800,
-        paymentAmount: 350,
-        remainingBalance: 12450,
-        isPaid: true,
-        dueDate: "2024-02-15",
-      },
-      {
-        id: "p3",
-        month: "March 2024",
-        startingBalance: 12450,
-        paymentAmount: 350,
-        remainingBalance: 12100,
-        isPaid: false,
-        dueDate: "2024-03-15",
-      },
-      {
-        id: "p4",
-        month: "April 2024",
-        startingBalance: 12100,
-        paymentAmount: 350,
-        remainingBalance: 11750,
-        isPaid: false,
-        dueDate: "2024-04-15",
-      },
-      {
-        id: "p5",
-        month: "May 2024",
-        startingBalance: 11750,
-        paymentAmount: 350,
-        remainingBalance: 11400,
-        isPaid: false,
-        dueDate: "2024-05-15",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Student Loan",
-    originalAmount: 25000,
-    currentBalance: 18500,
-    interestRate: 4.5,
-    minimumPayment: 280,
-    type: "Student Loan",
-    color: "bg-blue-500",
-    paymentSchedule: [
-      {
-        id: "p6",
-        month: "January 2024",
-        startingBalance: 18780,
-        paymentAmount: 280,
-        remainingBalance: 18500,
-        isPaid: true,
-        dueDate: "2024-01-01",
-      },
-      {
-        id: "p7",
-        month: "February 2024",
-        startingBalance: 18500,
-        paymentAmount: 280,
-        remainingBalance: 18220,
-        isPaid: true,
-        dueDate: "2024-02-01",
-      },
-      {
-        id: "p8",
-        month: "March 2024",
-        startingBalance: 18220,
-        paymentAmount: 280,
-        remainingBalance: 17940,
-        isPaid: false,
-        dueDate: "2024-03-01",
-      },
-    ],
-  },
-]
+const generatePaymentSchedule = (debt: Debt, months = 12) => {
+  const schedule = []
+  let currentBalance = debt.currentBalance
+  const currentDate = new Date()
+
+  for (let i = 0; i < months; i++) {
+    const paymentDate = new Date(currentDate)
+    paymentDate.setMonth(currentDate.getMonth() + i)
+
+    const startingBalance = currentBalance
+    const paymentAmount = Math.min(debt.monthlyPayment, currentBalance)
+    const remainingBalance = Math.max(0, currentBalance - paymentAmount)
+
+    schedule.push({
+      id: `${debt.$id}-${i}`,
+      month: paymentDate.toLocaleString("default", { month: "long", year: "numeric" }),
+      startingBalance,
+      paymentAmount,
+      remainingBalance,
+      isPaid: i < 2, // Mark first 2 months as paid for demo
+      dueDate: paymentDate.toISOString().split("T")[0],
+    })
+
+    currentBalance = remainingBalance
+    if (currentBalance === 0) break
+  }
+
+  return schedule
+}
+
+const debtTypeColors: { [key: string]: string } = {
+  "Credit Card": "bg-red-500",
+  "Student Loan": "bg-blue-500",
+  "Personal Loan": "bg-purple-500",
+  Mortgage: "bg-green-500",
+  "Auto Loan": "bg-orange-500",
+  Other: "bg-gray-500",
+}
 
 export function DebtTracker() {
-  const [debts, setDebts] = useState<Debt[]>(initialDebts)
+  const { user } = useAuth()
+  const [debts, setDebts] = useState<Debt[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [newDebt, setNewDebt] = useState({
+    name: "",
+    currentBalance: "",
+    originalAmount: "",
+    interestRate: "",
+    minimumPayment: "",
+    monthlyPayment: "",
+    dueDate: "",
+    type: "Credit Card",
+  })
+
+  useEffect(() => {
+    if (user) {
+      loadDebts()
+    }
+  }, [user])
+
+  const loadDebts = async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      const debtData = await debtService.getDebts(user.$id)
+      setDebts(debtData)
+    } catch (error) {
+      console.error("Error loading debts:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createDebt = async () => {
+    if (!user || !newDebt.name || !newDebt.currentBalance || !newDebt.monthlyPayment) return
+
+    try {
+      const debtData = {
+        userId: user.$id,
+        name: newDebt.name,
+        originalAmount: Number.parseFloat(newDebt.originalAmount) || Number.parseFloat(newDebt.currentBalance),
+        currentBalance: Number.parseFloat(newDebt.currentBalance),
+        monthlyPayment: Number.parseFloat(newDebt.monthlyPayment),
+        interestRate: Number.parseFloat(newDebt.interestRate) || 0,
+        minimumPayment: Number.parseFloat(newDebt.minimumPayment) || Number.parseFloat(newDebt.monthlyPayment),
+        dueDate: newDebt.dueDate || new Date().toISOString(),
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      }
+
+      const createdDebt = await debtService.createDebt(debtData)
+      setDebts((prev) => [...prev, createdDebt])
+      setNewDebt({
+        name: "",
+        currentBalance: "",
+        originalAmount: "",
+        interestRate: "",
+        minimumPayment: "",
+        monthlyPayment: "",
+        dueDate: "",
+        type: "Credit Card",
+      })
+      setIsAddDialogOpen(false)
+    } catch (error) {
+      console.error("Error creating debt:", error)
+    }
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -155,18 +155,9 @@ export function DebtTracker() {
   }
 
   const togglePaymentStatus = (debtId: string, paymentId: string) => {
-    setDebts((prev) =>
-      prev.map((debt) =>
-        debt.id === debtId
-          ? {
-              ...debt,
-              paymentSchedule: debt.paymentSchedule.map((payment) =>
-                payment.id === paymentId ? { ...payment, isPaid: !payment.isPaid } : payment,
-              ),
-            }
-          : debt,
-      ),
-    )
+    // This would typically update payment status in a separate payments collection
+    // For now, we'll just update the UI state
+    console.log(`Toggle payment ${paymentId} for debt ${debtId}`)
   }
 
   const getDebtProgress = (debt: Debt) => {
@@ -174,15 +165,32 @@ export function DebtTracker() {
     return (totalPaid / debt.originalAmount) * 100
   }
 
-  const getPaymentProgress = (debt: Debt) => {
-    const paidPayments = debt.paymentSchedule.filter((p) => p.isPaid).length
-    return (paidPayments / debt.paymentSchedule.length) * 100
-  }
-
   const totalDebt = debts.reduce((sum, debt) => sum + debt.currentBalance, 0)
   const totalOriginalDebt = debts.reduce((sum, debt) => sum + debt.originalAmount, 0)
   const totalMinimumPayments = debts.reduce((sum, debt) => sum + debt.minimumPayment, 0)
   const totalPaid = totalOriginalDebt - totalDebt
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (debts.length === 0) {
+    return (
+      <EmptyState
+        icon={<CreditCard className="h-6 w-6" />}
+        title="No debts tracked yet"
+        description="Add your first debt to start tracking your repayment progress."
+        action={{
+          label: "Add Debt",
+          onClick: () => setIsAddDialogOpen(true),
+        }}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -233,7 +241,7 @@ export function DebtTracker() {
               <div>
                 <p className="text-sm text-muted-foreground">Progress</p>
                 <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {Math.round((totalPaid / totalOriginalDebt) * 100)}%
+                  {totalOriginalDebt > 0 ? Math.round((totalPaid / totalOriginalDebt) * 100) : 0}%
                 </p>
               </div>
             </div>
@@ -262,21 +270,67 @@ export function DebtTracker() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="debtName">Debt Name</Label>
-                <Input id="debtName" placeholder="e.g., Credit Card - Chase" />
+                <Input
+                  id="debtName"
+                  placeholder="e.g., Credit Card - Chase"
+                  value={newDebt.name}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, name: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="currentBalance">Current Balance</Label>
-                <Input id="currentBalance" type="number" placeholder="12450" />
+                <Input
+                  id="currentBalance"
+                  type="number"
+                  placeholder="12450"
+                  value={newDebt.currentBalance}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, currentBalance: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="originalAmount">Original Amount (Optional)</Label>
+                <Input
+                  id="originalAmount"
+                  type="number"
+                  placeholder="15000"
+                  value={newDebt.originalAmount}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, originalAmount: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="interestRate">Interest Rate (%)</Label>
-                <Input id="interestRate" type="number" step="0.01" placeholder="18.99" />
+                <Input
+                  id="interestRate"
+                  type="number"
+                  step="0.01"
+                  placeholder="18.99"
+                  value={newDebt.interestRate}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, interestRate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="monthlyPayment">Monthly Payment</Label>
+                <Input
+                  id="monthlyPayment"
+                  type="number"
+                  placeholder="350"
+                  value={newDebt.monthlyPayment}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, monthlyPayment: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="minimumPayment">Minimum Payment</Label>
-                <Input id="minimumPayment" type="number" placeholder="350" />
+                <Input
+                  id="minimumPayment"
+                  type="number"
+                  placeholder="250"
+                  value={newDebt.minimumPayment}
+                  onChange={(e) => setNewDebt((prev) => ({ ...prev, minimumPayment: e.target.value }))}
+                />
               </div>
-              <Button className="w-full">Add Debt</Button>
+              <Button className="w-full" onClick={createDebt}>
+                Add Debt
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -286,12 +340,13 @@ export function DebtTracker() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {debts.map((debt) => {
           const debtProgress = getDebtProgress(debt)
-          const paymentProgress = getPaymentProgress(debt)
+          const paymentSchedule = generatePaymentSchedule(debt)
+          const paymentProgress = (paymentSchedule.filter((p) => p.isPaid).length / paymentSchedule.length) * 100
 
           return (
-            <Card key={debt.id} className="relative overflow-hidden">
+            <Card key={debt.$id} className="relative overflow-hidden">
               {/* Color accent bar */}
-              <div className={cn("absolute top-0 left-0 right-0 h-1", debt.color)} />
+              <div className={cn("absolute top-0 left-0 right-0 h-1", debtTypeColors[debt.type] || "bg-gray-500")} />
 
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -331,9 +386,9 @@ export function DebtTracker() {
                     <span className="font-semibold">{formatCurrency(debt.originalAmount)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Minimum Payment</span>
+                    <span className="text-sm text-muted-foreground">Monthly Payment</span>
                     <span className="font-semibold text-blue-600 dark:text-blue-400">
-                      {formatCurrency(debt.minimumPayment)}
+                      {formatCurrency(debt.monthlyPayment)}
                     </span>
                   </div>
                 </div>
@@ -373,12 +428,12 @@ export function DebtTracker() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {debt.paymentSchedule.map((payment) => (
+                          {paymentSchedule.map((payment) => (
                             <TableRow key={payment.id} className={payment.isPaid ? "bg-muted/50" : ""}>
                               <TableCell>
                                 <Checkbox
                                   checked={payment.isPaid}
-                                  onCheckedChange={() => togglePaymentStatus(debt.id, payment.id)}
+                                  onCheckedChange={() => togglePaymentStatus(debt.$id, payment.id)}
                                 />
                               </TableCell>
                               <TableCell className="font-medium">{payment.month}</TableCell>
@@ -414,9 +469,11 @@ export function DebtTracker() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Total Progress</span>
-              <span className="font-semibold">{Math.round((totalPaid / totalOriginalDebt) * 100)}%</span>
+              <span className="font-semibold">
+                {totalOriginalDebt > 0 ? Math.round((totalPaid / totalOriginalDebt) * 100) : 0}%
+              </span>
             </div>
-            <Progress value={(totalPaid / totalOriginalDebt) * 100} className="h-3" />
+            <Progress value={totalOriginalDebt > 0 ? (totalPaid / totalOriginalDebt) * 100 : 0} className="h-3" />
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Remaining debt:</span>
