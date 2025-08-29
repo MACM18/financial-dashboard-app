@@ -10,11 +10,11 @@ import { Edit2, Check, X, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LoadingSpinner } from "./LoadingSpinner"
 import { EmptyState } from "./EmptyState"
-import { useAuth } from "@/contexts/AuthContext"
-import { budgetService } from "@/lib/database"
+import { authService } from "@/lib/simple-auth"
+import { budgetService } from "@/lib/neon-database"
 
 interface BudgetItem {
-  $id: string
+  id: string
   category: string
   budgetedAmount: number
   actualAmount: number
@@ -44,7 +44,7 @@ const defaultCategories = [
 ]
 
 export function BudgetTracker() {
-  const { user } = useAuth()
+  const [user, setUser] = useState<{ id: string } | null>(null)
   const [budgetData, setBudgetData] = useState<BudgetItem[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Partial<BudgetItem>>({})
@@ -57,7 +57,7 @@ export function BudgetTracker() {
 
   console.log(
     "[v0] BudgetTracker rendering, user:",
-    user?.$id,
+    user?.id,
     "loading:",
     loading,
     "budgetData length:",
@@ -65,22 +65,30 @@ export function BudgetTracker() {
   )
 
   useEffect(() => {
-    console.log("[v0] BudgetTracker useEffect triggered, user:", user?.$id)
-    if (user) {
-      loadBudgetData()
-    }
-  }, [user])
+    loadUserAndBudgetData()
+  }, [])
 
-  const loadBudgetData = async () => {
-    if (!user) {
-      console.log("[v0] No user found, skipping budget data load")
-      return
-    }
-
+  const loadUserAndBudgetData = async () => {
     try {
-      console.log("[v0] Loading budget data for user:", user.$id)
+      const currentUser = await authService.getCurrentUser()
+      if (!currentUser) {
+        console.log("[v0] No user found")
+        return
+      }
+
+      setUser({ id: currentUser.id })
+      console.log("[v0] BudgetTracker useEffect triggered, user:", currentUser.id)
+      await loadBudgetData(currentUser.id)
+    } catch (error) {
+      console.error("[v0] Error loading user:", error)
+    }
+  }
+
+  const loadBudgetData = async (userId: string) => {
+    try {
+      console.log("[v0] Loading budget data for user:", userId)
       setLoading(true)
-      const budgets = await budgetService.getBudgets(user.$id, currentMonth, currentYear)
+      const budgets = await budgetService.getBudgets(userId, currentMonth, currentYear)
       console.log("[v0] Loaded budgets:", budgets)
 
       if (budgets.length === 0) {
@@ -88,7 +96,7 @@ export function BudgetTracker() {
         const createdBudgets = []
         for (const category of defaultCategories) {
           const newBudget = await budgetService.createBudget({
-            userId: user.$id,
+            userId,
             month: currentMonth,
             year: currentYear,
             ...category,
@@ -108,7 +116,7 @@ export function BudgetTracker() {
   }
 
   const startEditing = (item: BudgetItem) => {
-    setEditingId(item.$id)
+    setEditingId(item.id)
     setEditValues({
       budgetedAmount: item.budgetedAmount,
       actualAmount: item.actualAmount,
@@ -127,7 +135,7 @@ export function BudgetTracker() {
         notes: editValues.notes,
       })
 
-      setBudgetData((prev) => prev.map((item) => (item.$id === editingId ? updatedBudget : item)))
+      setBudgetData((prev) => prev.map((item) => (item.id === editingId ? updatedBudget : item)))
       setEditingId(null)
       setEditValues({})
     } catch (error) {
@@ -257,7 +265,7 @@ export function BudgetTracker() {
               </thead>
               <tbody>
                 {budgetData.map((item) => (
-                  <tr key={item.$id} className="border-b border-border/50">
+                  <tr key={item.id} className="border-b border-border/50">
                     <td className="py-3 px-2">
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">{item.category}</span>
@@ -267,7 +275,7 @@ export function BudgetTracker() {
                       </div>
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.$id ? (
+                      {editingId === item.id ? (
                         <Input
                           type="number"
                           value={editValues.budgetedAmount ?? ""}
@@ -285,7 +293,7 @@ export function BudgetTracker() {
                       )}
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.$id ? (
+                      {editingId === item.id ? (
                         <Input
                           type="number"
                           value={editValues.actualAmount ?? ""}
@@ -314,7 +322,7 @@ export function BudgetTracker() {
                       </div>
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.$id ? (
+                      {editingId === item.id ? (
                         <Input
                           value={editValues.notes ?? ""}
                           onChange={(e) =>
@@ -332,7 +340,7 @@ export function BudgetTracker() {
                       )}
                     </td>
                     <td className="py-3 px-2">
-                      {editingId === item.$id ? (
+                      {editingId === item.id ? (
                         <div className="flex items-center space-x-1">
                           <Button variant="ghost" size="sm" onClick={saveEdit} disabled={saving}>
                             {saving ? <LoadingSpinner size="sm" /> : <Check className="h-3 w-3" />}

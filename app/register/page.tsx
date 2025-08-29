@@ -1,17 +1,19 @@
-import Link from "next/link"
-import { RegisterForm } from "@/components/auth/RegisterForm"
+"use client"
+
+import { useEffect } from "react"
 
 export default function RegisterPage() {
+  useEffect(() => {
+    window.location.href = "/handler/sign-up"
+  }, [])
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
-        <RegisterForm />
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
-          </Link>
-        </p>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Redirecting to Sign Up...</h1>
+          <p className="text-muted-foreground mt-2">Please wait while we redirect you to the registration page.</p>
+        </div>
       </div>
     </div>
   )

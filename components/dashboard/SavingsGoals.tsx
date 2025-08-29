@@ -19,11 +19,11 @@ import { Plus, Target, TrendingUp, Calendar, DollarSign, Edit2 } from "lucide-re
 import { cn } from "@/lib/utils"
 import { LoadingSpinner } from "./LoadingSpinner"
 import { EmptyState } from "./EmptyState"
-import { useAuth } from "@/contexts/AuthContext"
-import { savingsService } from "@/lib/database"
+import { authService } from "@/lib/simple-auth"
+import { savingsService } from "@/lib/neon-database"
 
 interface SavingsGoal {
-  $id: string
+  id: string
   name: string
   targetAmount: number
   currentAmount: number
@@ -44,7 +44,7 @@ const categoryColors: { [key: string]: string } = {
 }
 
 export function SavingsGoals() {
-  const { user } = useAuth()
+  const [user, setUser] = useState<{ id: string } | null>(null)
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
   const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -59,29 +59,40 @@ export function SavingsGoals() {
     targetDate: "",
   })
 
-  console.log("[v0] SavingsGoals rendering, user:", user?.$id, "loading:", loading, "goals:", savingsGoals.length)
+  console.log("[v0] SavingsGoals rendering, user:", user?.id, "loading:", loading, "goals:", savingsGoals.length)
   console.log(
     "[v0] Dialog states - Add:",
     isAddDialogOpen,
     "Update:",
     isUpdateDialogOpen,
     "Editing goal:",
-    editingGoal?.$id,
+    editingGoal?.id,
   )
 
   useEffect(() => {
-    if (user) {
-      loadSavingsGoals()
-    }
-  }, [user])
+    loadUserAndSavingsGoals()
+  }, [])
 
-  const loadSavingsGoals = async () => {
-    if (!user) return
-
+  const loadUserAndSavingsGoals = async () => {
     try {
-      console.log("[v0] Loading savings goals for user:", user.$id)
+      const currentUser = await authService.getCurrentUser()
+      if (!currentUser) {
+        console.log("[v0] No user found")
+        return
+      }
+
+      setUser({ id: currentUser.id })
+      await loadSavingsGoals(currentUser.id)
+    } catch (error) {
+      console.error("[v0] Error loading user:", error)
+    }
+  }
+
+  const loadSavingsGoals = async (userId: string) => {
+    try {
+      console.log("[v0] Loading savings goals for user:", userId)
       setLoading(true)
-      const goals = await savingsService.getSavingsGoals(user.$id)
+      const goals = await savingsService.getSavingsGoals(userId)
       console.log("[v0] Loaded savings goals:", goals)
       setSavingsGoals(goals)
     } catch (error) {
@@ -100,7 +111,7 @@ export function SavingsGoals() {
     try {
       console.log("[v0] Creating savings goal:", newGoal)
       const goalData = {
-        userId: user.$id,
+        userId: user.id,
         name: newGoal.name,
         targetAmount: Number.parseFloat(newGoal.targetAmount),
         currentAmount: 0,
@@ -140,13 +151,13 @@ export function SavingsGoals() {
       const newCurrentAmount = editingGoal.currentAmount + additionalAmount
       const isCompleted = newCurrentAmount >= editingGoal.targetAmount
 
-      const updatedGoal = await savingsService.updateSavingsGoal(editingGoal.$id, {
+      const updatedGoal = await savingsService.updateSavingsGoal(editingGoal.id, {
         currentAmount: newCurrentAmount,
         isCompleted,
       })
 
       console.log("[v0] Updated goal:", updatedGoal)
-      setSavingsGoals((prev) => prev.map((g) => (g.$id === editingGoal.$id ? updatedGoal : g)))
+      setSavingsGoals((prev) => prev.map((g) => (g.id === editingGoal.id ? updatedGoal : g)))
       setEditingGoal(null)
       setUpdateAmount("")
       setIsUpdateDialogOpen(false)
@@ -348,7 +359,7 @@ export function SavingsGoals() {
           const isCompleted = goal.isCompleted || progressPercentage >= 100
 
           return (
-            <Card key={goal.$id} className={cn("relative overflow-hidden", isCompleted && "ring-2 ring-green-500")}>
+            <Card key={goal.id} className={cn("relative overflow-hidden", isCompleted && "ring-2 ring-green-500")}>
               {/* Color accent bar */}
               <div
                 className={cn("absolute top-0 left-0 right-0 h-1", categoryColors[goal.category] || "bg-gray-500")}

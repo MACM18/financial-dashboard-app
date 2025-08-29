@@ -21,8 +21,8 @@ import { Plus, CreditCard, TrendingDown, Calendar, DollarSign, CheckCircle2 } fr
 import { cn } from "@/lib/utils"
 import { LoadingSpinner } from "./LoadingSpinner"
 import { EmptyState } from "./EmptyState"
-import { useAuth } from "@/contexts/AuthContext"
-import { debtService } from "@/lib/database"
+import { authService } from "@/lib/simple-auth"
+import { debtService } from "@/lib/neon-database"
 
 interface Debt {
   $id: string
@@ -76,7 +76,7 @@ const debtTypeColors: { [key: string]: string } = {
 }
 
 export function DebtTracker() {
-  const { user } = useAuth()
+  const [user, setUser] = useState<{ id: string } | null>(null)
   const [debts, setDebts] = useState<Debt[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
@@ -93,21 +93,32 @@ export function DebtTracker() {
     type: "Credit Card",
   })
 
-  console.log("[v0] DebtTracker rendering, user:", user?.$id, "loading:", loading, "debts:", debts.length)
+  console.log("[v0] DebtTracker rendering, user:", user?.id, "loading:", loading, "debts:", debts.length)
 
   useEffect(() => {
-    if (user) {
-      loadDebts()
-    }
-  }, [user])
+    loadUserAndDebts()
+  }, [])
 
-  const loadDebts = async () => {
-    if (!user) return
-
+  const loadUserAndDebts = async () => {
     try {
-      console.log("[v0] Loading debts for user:", user.$id)
+      const currentUser = await authService.getCurrentUser()
+      if (!currentUser) {
+        console.log("[v0] No user found")
+        return
+      }
+
+      setUser({ id: currentUser.id })
+      await loadDebts(currentUser.id)
+    } catch (error) {
+      console.error("[v0] Error loading user:", error)
+    }
+  }
+
+  const loadDebts = async (userId: string) => {
+    try {
+      console.log("[v0] Loading debts for user:", userId)
       setLoading(true)
-      const debtData = await debtService.getDebts(user.$id)
+      const debtData = await debtService.getDebts(userId)
       console.log("[v0] Loaded debts:", debtData)
       setDebts(debtData)
     } catch (error) {
@@ -126,7 +137,7 @@ export function DebtTracker() {
     try {
       console.log("[v0] Creating debt:", newDebt)
       const debtData = {
-        userId: user.$id,
+        userId: user.id,
         name: newDebt.name,
         originalAmount: Number.parseFloat(newDebt.originalAmount) || Number.parseFloat(newDebt.currentBalance),
         currentBalance: Number.parseFloat(newDebt.currentBalance),
@@ -171,8 +182,6 @@ export function DebtTracker() {
   }
 
   const togglePaymentStatus = (debtId: string, paymentId: string) => {
-    // This would typically update payment status in a separate payments collection
-    // For now, we'll just update the UI state
     console.log(`[v0] Toggle payment ${paymentId} for debt ${debtId}`)
   }
 
