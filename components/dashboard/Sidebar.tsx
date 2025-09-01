@@ -1,139 +1,235 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useAuth } from "@/contexts/AuthContext"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { LayoutDashboard, PiggyBank, CreditCard, Settings, Menu, X, LogOut, User, Calculator } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  TrendingUp,
+  Target,
+  CreditCard,
+  Settings,
+  ChevronRight,
+  PieChart,
+  BarChart3,
+} from "lucide-react";
+
+interface SidebarStats {
+  totalBudget: number;
+  totalSavings: number;
+  totalDebt: number;
+  budgetUtilization: number;
+  monthlyChange: number;
+  savingsProgress: number;
+}
 
 const navigation = [
   {
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+    description: "Overview of your finances",
   },
   {
     name: "Budget Tracker",
     href: "/dashboard/budget",
-    icon: Calculator,
+    icon: PieChart,
+    description: "Manage monthly budgets",
   },
   {
     name: "Savings Goals",
     href: "/dashboard/savings",
-    icon: PiggyBank,
+    icon: Target,
+    description: "Track savings progress",
   },
   {
     name: "Debt Tracker",
     href: "/dashboard/debt",
     icon: CreditCard,
+    description: "Monitor debt repayment",
+  },
+  {
+    name: "Analytics",
+    href: "/dashboard/analytics",
+    icon: BarChart3,
+    description: "Financial insights & trends",
   },
   {
     name: "Settings",
     href: "/dashboard/settings",
     icon: Settings,
+    description: "Account preferences",
   },
-]
+];
 
-export function Sidebar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const pathname = usePathname()
-  const { user, logout } = useAuth()
+interface SidebarProps {
+  className?: string;
+}
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } catch (error) {
-      console.error("Logout failed:", error)
+export function Sidebar({ className }: SidebarProps) {
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const [stats, setStats] = useState<SidebarStats | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchSidebarStats();
     }
-  }
+  }, [user]);
+
+  const fetchSidebarStats = async () => {
+    try {
+      const response = await fetch("/api/dashboard/stats", {
+        headers: {
+          Authorization: `Bearer ${user?.id}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Parse values from the stats response
+        const totalBudget = parseFloat(
+          data.stats[0]?.value?.replace(/[$,]/g, "") || "0"
+        );
+        const totalSavings = parseFloat(
+          data.stats[2]?.value?.replace(/[$,]/g, "") || "0"
+        );
+        const totalDebt = parseFloat(
+          data.stats[3]?.value?.replace(/[$,]/g, "") || "0"
+        );
+
+        // Calculate monthly change based on spending vs budget
+        const totalSpent = parseFloat(
+          data.stats[1]?.value?.replace(/[$,]/g, "") || "0"
+        );
+        const monthlyChange =
+          totalBudget > 0
+            ? ((totalBudget - totalSpent) / totalBudget) * 100
+            : 0;
+
+        setStats({
+          totalBudget,
+          totalSavings,
+          totalDebt,
+          budgetUtilization: parseFloat(
+            data.stats[1]?.change?.replace(/[%]/g, "") || "0"
+          ),
+          monthlyChange,
+          savingsProgress: 0, // Will calculate if needed
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch sidebar stats:", error);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount === 0) return "$0";
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    }
+    if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}K`;
+    }
+    return `$${Math.round(amount).toLocaleString()}`;
+  };
 
   return (
-    <>
-      <div className="lg:hidden fixed top-3 left-3 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-background/95 backdrop-blur-sm shadow-sm"
-        >
-          {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-      </div>
-
-      {/* Mobile overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
+    <div
+      className={cn(
+        "flex h-full w-64 flex-col bg-card border-r border-border",
+        className
       )}
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
-                <LayoutDashboard className="h-4 w-4 text-sidebar-primary-foreground" />
-              </div>
-              <span className="text-lg font-semibold text-sidebar-foreground">FinanceApp</span>
-            </div>
+    >
+      <div className='flex h-16 items-center border-b border-border px-6'>
+        <div className='flex items-center space-x-2'>
+          <div className='h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center'>
+            <TrendingUp className='h-5 w-5 text-white' />
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* User section */}
-          <div className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-sidebar-primary rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-sidebar-primary-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name || "User"}</p>
-                <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="w-full justify-start text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent/50 bg-transparent"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+          <div>
+            <h1 className='text-lg font-semibold text-foreground'>
+              FinanceApp
+            </h1>
+            <p className='text-xs text-muted-foreground'>Personal Dashboard</p>
           </div>
         </div>
       </div>
-    </>
-  )
+
+      <nav className='flex-1 space-y-1 p-4'>
+        {navigation.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "group flex items-center space-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <item.icon
+                className={cn(
+                  "h-5 w-5 flex-shrink-0 transition-colors",
+                  isActive
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground group-hover:text-foreground"
+                )}
+              />
+              <div className='flex-1 min-w-0'>
+                <p className='truncate'>{item.name}</p>
+                <p
+                  className={cn(
+                    "truncate text-xs transition-colors",
+                    isActive
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground/70 group-hover:text-muted-foreground"
+                  )}
+                >
+                  {item.description}
+                </p>
+              </div>
+              {isActive && (
+                <ChevronRight className='h-4 w-4 text-primary-foreground' />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className='border-t border-border p-4'>
+        <div className='text-xs text-muted-foreground'>
+          <p className='mb-1'>Financial Overview</p>
+          <div className='space-y-1'>
+            <div className='flex justify-between'>
+              <span>This Month</span>
+              <span
+                className={`${
+                  stats && stats.monthlyChange >= 0
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-red-600 dark:text-red-400"
+                }`}
+              >
+                {stats
+                  ? `${
+                      stats.monthlyChange >= 0 ? "+" : ""
+                    }${stats.monthlyChange.toFixed(1)}%`
+                  : "+0.0%"}
+              </span>
+            </div>
+            <div className='flex justify-between'>
+              <span>Total Saved</span>
+              <span className='font-medium'>
+                {stats ? formatCurrency(stats.totalSavings) : "$0"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

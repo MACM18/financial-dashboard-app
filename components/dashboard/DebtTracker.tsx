@@ -35,11 +35,10 @@ import {
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { EmptyState } from "./EmptyState";
-import { authService } from "@/lib/simple-auth";
-// import { debtService } from "@/lib/neon-database"
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Debt {
-  $id: string;
+  id: string;
   name: string;
   originalAmount: number;
   currentBalance: number;
@@ -47,7 +46,8 @@ interface Debt {
   minimumPayment: number;
   monthlyPayment: number;
   dueDate: string;
-  isActive: boolean;
+  debtType: string;
+  isPaidOff: boolean;
 }
 
 const generatePaymentSchedule = (debt: Debt, months = 12) => {
@@ -64,7 +64,7 @@ const generatePaymentSchedule = (debt: Debt, months = 12) => {
     const remainingBalance = Math.max(0, currentBalance - paymentAmount);
 
     schedule.push({
-      id: `${debt.$id}-${i}`,
+      id: `${debt.id}-${i}`,
       month: paymentDate.toLocaleString("default", {
         month: "long",
         year: "numeric",
@@ -93,9 +93,10 @@ const debtTypeColors: { [key: string]: string } = {
 };
 
 export function DebtTracker() {
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const { user } = useAuth();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
@@ -107,46 +108,32 @@ export function DebtTracker() {
     minimumPayment: "",
     monthlyPayment: "",
     dueDate: "",
-    type: "Credit Card",
+    debtType: "Credit Card",
   });
 
-  console.log(
-    "[v0] DebtTracker rendering, user:",
-    user?.id,
-    "loading:",
-    loading,
-    "debts:",
-    debts.length
-  );
-
   useEffect(() => {
-    loadUserAndDebts();
-  }, []);
+    if (user) {
+      loadDebts();
+    }
+  }, [user]);
 
-  const loadUserAndDebts = async () => {
+  const loadDebts = async () => {
     try {
-      const currentUser = await authService.getCurrentUser();
-      if (!currentUser) {
-        console.log("[v0] No user found");
-        return;
+      setLoading(true);
+      const response = await fetch("/api/debts", {
+        headers: {
+          Authorization: `Bearer ${user?.id}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch debts");
       }
 
-      setUser({ id: currentUser.id });
-      await loadDebts(currentUser.id);
-    } catch (error) {
-      console.error("[v0] Error loading user:", error);
-    }
-  };
-
-  const loadDebts = async (userId: string) => {
-    try {
-      console.log("[v0] Loading debts for user:", userId);
-      setLoading(true);
-      const debtData = await debtService.getDebts(userId);
-      console.log("[v0] Loaded debts:", debtData);
-      setDebts(debtData);
-    } catch (error) {
-      console.error("[v0] Error loading debts:", error);
+      const data = await response.json();
+      setDebts(data.debts || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load debts");
     } finally {
       setLoading(false);
     }
@@ -159,35 +146,37 @@ export function DebtTracker() {
       !newDebt.currentBalance ||
       !newDebt.monthlyPayment
     ) {
-      console.log("[v0] Cannot create debt - missing data:", {
-        user: !!user,
-        newDebt,
-      });
       return;
     }
 
     try {
-      console.log("[v0] Creating debt:", newDebt);
-      const debtData = {
-        userId: user.id,
-        name: newDebt.name,
-        originalAmount:
-          Number.parseFloat(newDebt.originalAmount) ||
-          Number.parseFloat(newDebt.currentBalance),
-        currentBalance: Number.parseFloat(newDebt.currentBalance),
-        monthlyPayment: Number.parseFloat(newDebt.monthlyPayment),
-        interestRate: Number.parseFloat(newDebt.interestRate) || 0,
-        minimumPayment:
-          Number.parseFloat(newDebt.minimumPayment) ||
-          Number.parseFloat(newDebt.monthlyPayment),
-        dueDate: newDebt.dueDate || new Date().toISOString(),
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
+      const response = await fetch("/api/debts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.id}`,
+        },
+        body: JSON.stringify({
+          name: newDebt.name,
+          originalAmount:
+            parseFloat(newDebt.originalAmount) ||
+            parseFloat(newDebt.currentBalance),
+          currentBalance: parseFloat(newDebt.currentBalance),
+          monthlyPayment: parseFloat(newDebt.monthlyPayment),
+          interestRate: parseFloat(newDebt.interestRate) || 0,
+          minimumPayment:
+            parseFloat(newDebt.minimumPayment) ||
+            parseFloat(newDebt.monthlyPayment),
+          dueDate: newDebt.dueDate || new Date().toISOString().split("T")[0],
+          debtType: newDebt.debtType,
+        }),
+      });
 
-      const createdDebt = await debtService.createDebt(debtData);
-      console.log("[v0] Created debt:", createdDebt);
-      setDebts((prev) => [...prev, createdDebt]);
+      if (!response.ok) {
+        throw new Error("Failed to create debt");
+      }
+
+      await loadDebts();
       setNewDebt({
         name: "",
         currentBalance: "",
@@ -196,11 +185,11 @@ export function DebtTracker() {
         minimumPayment: "",
         monthlyPayment: "",
         dueDate: "",
-        type: "Credit Card",
+        debtType: "Credit Card",
       });
       setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error("[v0] Error creating debt:", error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create debt");
     }
   };
 
@@ -451,9 +440,12 @@ export function DebtTracker() {
                 <select
                   id='debtType'
                   className='w-full p-2 border rounded-md'
-                  value={newDebt.type}
+                  value={newDebt.debtType}
                   onChange={(e) =>
-                    setNewDebt((prev) => ({ ...prev, type: e.target.value }))
+                    setNewDebt((prev) => ({
+                      ...prev,
+                      debtType: e.target.value,
+                    }))
                   }
                 >
                   <option value='Credit Card'>Credit Card</option>
@@ -483,7 +475,7 @@ export function DebtTracker() {
             100;
 
           return (
-            <Card key={debt.$id} className='relative overflow-hidden'>
+            <Card key={debt.id} className='relative overflow-hidden'>
               <div
                 className={cn(
                   "absolute top-0 left-0 right-0 h-1",
@@ -496,7 +488,7 @@ export function DebtTracker() {
                   <div>
                     <CardTitle className='text-lg'>{debt.name}</CardTitle>
                     <Badge variant='secondary' className='mt-1 text-xs'>
-                      {debt.type}
+                      {debt.debtType}
                     </Badge>
                   </div>
                   <div className='text-right'>
@@ -611,7 +603,7 @@ export function DebtTracker() {
                         <Checkbox
                           checked={payment.isPaid}
                           onCheckedChange={() =>
-                            togglePaymentStatus(selectedDebt.$id, payment.id)
+                            togglePaymentStatus(selectedDebt.id, payment.id)
                           }
                         />
                       </TableCell>

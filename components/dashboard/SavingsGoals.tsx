@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -16,18 +22,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Plus,
+  PlusIcon,
   Target,
-  TrendingUp,
   Calendar,
   DollarSign,
-  Edit2,
+  Edit,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { EmptyState } from "./EmptyState";
-import { authService } from "@/lib/simple-auth";
-// import { savingsService } from "@/lib/neon-database"
 
 interface SavingsGoal {
   id: string;
@@ -35,175 +40,184 @@ interface SavingsGoal {
   targetAmount: number;
   currentAmount: number;
   monthlyContribution: number;
-  targetDate?: string;
   category: string;
+  targetDate: string | null;
   isCompleted: boolean;
 }
 
-const categoryColors: { [key: string]: string } = {
-  Emergency: "bg-red-500",
-  Entertainment: "bg-orange-500",
-  Technology: "bg-blue-500",
-  Travel: "bg-green-500",
-  Education: "bg-purple-500",
-  Health: "bg-pink-500",
-  Other: "bg-gray-500",
-};
-
 export function SavingsGoals() {
-  const [user, setUser] = useState<{ id: string } | null>(null);
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
+  const { user } = useAuth();
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [updateAmount, setUpdateAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [isAddingGoal, setIsAddingGoal] = useState(false);
+  const [addingContribution, setAddingContribution] = useState<string | null>(
+    null
+  );
+  const [contributionAmount, setContributionAmount] = useState("");
+
   const [newGoal, setNewGoal] = useState({
     name: "",
     targetAmount: "",
+    currentAmount: "",
     monthlyContribution: "",
-    category: "Other",
+    category: "",
     targetDate: "",
   });
 
-  console.log(
-    "[v0] SavingsGoals rendering, user:",
-    user?.id,
-    "loading:",
-    loading,
-    "goals:",
-    savingsGoals.length
-  );
-  console.log(
-    "[v0] Dialog states - Add:",
-    isAddDialogOpen,
-    "Update:",
-    isUpdateDialogOpen,
-    "Editing goal:",
-    editingGoal?.id
-  );
+  const [editGoal, setEditGoal] = useState<Partial<SavingsGoal>>({});
 
   useEffect(() => {
-    loadUserAndSavingsGoals();
-  }, []);
+    if (user) {
+      fetchGoals();
+    }
+  }, [user]);
 
-  const loadUserAndSavingsGoals = async () => {
+  const fetchGoals = async () => {
     try {
-      const currentUser = await authService.getCurrentUser();
-      if (!currentUser) {
-        console.log("[v0] No user found");
-        return;
+      setLoading(true);
+      const response = await fetch("/api/savings", {
+        headers: {
+          Authorization: `Bearer ${user?.id}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch savings goals");
       }
 
-      setUser({ id: currentUser.id });
-      await loadSavingsGoals(currentUser.id);
-    } catch (error) {
-      console.error("[v0] Error loading user:", error);
-    }
-  };
-
-  const loadSavingsGoals = async (userId: string) => {
-    try {
-      console.log("[v0] Loading savings goals for user:", userId);
-      setLoading(true);
-      const goals = await savingsService.getSavingsGoals(userId);
-      console.log("[v0] Loaded savings goals:", goals);
-      setSavingsGoals(goals);
-    } catch (error) {
-      console.error("[v0] Error loading savings goals:", error);
+      const data = await response.json();
+      setGoals(data.goals || []);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load savings goals"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const createSavingsGoal = async () => {
-    if (
-      !user ||
-      !newGoal.name ||
-      !newGoal.targetAmount ||
-      !newGoal.monthlyContribution
-    ) {
-      console.log("[v0] Cannot create goal - missing data:", {
-        user: !!user,
-        newGoal,
-      });
-      return;
-    }
-
+  const createGoal = async () => {
     try {
-      console.log("[v0] Creating savings goal:", newGoal);
-      const goalData = {
-        userId: user.id,
-        name: newGoal.name,
-        targetAmount: Number.parseFloat(newGoal.targetAmount),
-        currentAmount: 0,
-        monthlyContribution: Number.parseFloat(newGoal.monthlyContribution),
-        category: newGoal.category,
-        targetDate: newGoal.targetDate || undefined,
-        isCompleted: false,
-        createdAt: new Date().toISOString(),
-      };
+      const response = await fetch("/api/savings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.id}`,
+        },
+        body: JSON.stringify({
+          name: newGoal.name,
+          targetAmount: parseFloat(newGoal.targetAmount),
+          currentAmount: parseFloat(newGoal.currentAmount) || 0,
+          monthlyContribution: parseFloat(newGoal.monthlyContribution),
+          category: newGoal.category,
+          targetDate: newGoal.targetDate || null,
+        }),
+      });
 
-      const createdGoal = await savingsService.createSavingsGoal(goalData);
-      console.log("[v0] Created savings goal:", createdGoal);
-      setSavingsGoals((prev) => [...prev, createdGoal]);
+      if (!response.ok) {
+        throw new Error("Failed to create savings goal");
+      }
+
+      await fetchGoals();
+      setIsAddingGoal(false);
       setNewGoal({
         name: "",
         targetAmount: "",
+        currentAmount: "",
         monthlyContribution: "",
-        category: "Other",
+        category: "",
         targetDate: "",
       });
-      setIsAddDialogOpen(false);
-    } catch (error) {
-      console.error("[v0] Error creating savings goal:", error);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create savings goal"
+      );
     }
   };
 
-  const handleUpdateProgressClick = (goal: SavingsGoal) => {
-    console.log("[v0] Update progress clicked for goal:", goal.name);
-    setEditingGoal(goal);
-    setUpdateAmount("");
-    setIsUpdateDialogOpen(true);
-  };
-
-  const updateGoalProgress = async () => {
-    if (!editingGoal || !updateAmount) {
-      console.log("[v0] Cannot update progress - missing data:", {
-        editingGoal: !!editingGoal,
-        updateAmount,
-      });
-      return;
-    }
-
+  const updateGoal = async (goalId: string) => {
     try {
-      console.log(
-        "[v0] Updating goal progress:",
-        editingGoal.name,
-        "amount:",
-        updateAmount
-      );
-      const additionalAmount = Number.parseFloat(updateAmount);
-      const newCurrentAmount = editingGoal.currentAmount + additionalAmount;
-      const isCompleted = newCurrentAmount >= editingGoal.targetAmount;
+      const response = await fetch("/api/savings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.id}`,
+        },
+        body: JSON.stringify({
+          id: goalId,
+          ...editGoal,
+        }),
+      });
 
-      const updatedGoal = await savingsService.updateSavingsGoal(
-        editingGoal.id,
-        {
-          currentAmount: newCurrentAmount,
-          isCompleted,
-        }
-      );
+      if (!response.ok) {
+        throw new Error("Failed to update savings goal");
+      }
 
-      console.log("[v0] Updated goal:", updatedGoal);
-      setSavingsGoals((prev) =>
-        prev.map((g) => (g.id === editingGoal.id ? updatedGoal : g))
-      );
+      await fetchGoals();
       setEditingGoal(null);
-      setUpdateAmount("");
-      setIsUpdateDialogOpen(false);
-    } catch (error) {
-      console.error("[v0] Error updating goal progress:", error);
+      setEditGoal({});
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update savings goal"
+      );
+    }
+  };
+
+  const deleteGoal = async (goalId: string) => {
+    try {
+      const response = await fetch(`/api/savings?id=${goalId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user?.id}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete savings goal");
+      }
+
+      await fetchGoals();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete savings goal"
+      );
+    }
+  };
+
+  const addContribution = async (goalId: string) => {
+    try {
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
+
+      const newCurrentAmount =
+        goal.currentAmount + parseFloat(contributionAmount);
+
+      const response = await fetch("/api/savings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.id}`,
+        },
+        body: JSON.stringify({
+          ...goal,
+          currentAmount: newCurrentAmount,
+          isCompleted: newCurrentAmount >= goal.targetAmount,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add contribution");
+      }
+
+      await fetchGoals();
+      setAddingContribution(null);
+      setContributionAmount("");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to add contribution"
+      );
     }
   };
 
@@ -214,137 +228,73 @@ export function SavingsGoals() {
     }).format(amount);
   };
 
-  const getProgressPercentage = (current: number, target: number) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "No target date";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const calculateProgress = (current: number, target: number) => {
     return Math.min((current / target) * 100, 100);
   };
 
-  const getMonthsToGoal = (
-    current: number,
-    target: number,
-    monthlyContribution: number
+  const getTimeToGoal = (
+    targetDate: string | null,
+    monthlyContribution: number,
+    currentAmount: number,
+    targetAmount: number
   ) => {
-    if (monthlyContribution <= 0) return "∞";
-    const remaining = target - current;
-    if (remaining <= 0) return "0";
-    return Math.ceil(remaining / monthlyContribution);
-  };
+    if (!targetDate) {
+      const remainingAmount = targetAmount - currentAmount;
+      const monthsNeeded = Math.ceil(remainingAmount / monthlyContribution);
+      return { status: "no-date", months: monthsNeeded };
+    }
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 100) return "bg-green-500";
-    if (percentage >= 75) return "bg-blue-500";
-    if (percentage >= 50) return "bg-yellow-500";
-    return "bg-gray-400";
-  };
+    const target = new Date(targetDate);
+    const now = new Date();
+    const monthsToTarget = Math.ceil(
+      (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)
+    );
 
-  const totalSaved = savingsGoals.reduce(
-    (sum, goal) => sum + goal.currentAmount,
-    0
-  );
-  const totalTarget = savingsGoals.reduce(
-    (sum, goal) => sum + goal.targetAmount,
-    0
-  );
-  const totalMonthlyContributions = savingsGoals.reduce(
-    (sum, goal) => sum + goal.monthlyContribution,
-    0
-  );
+    const remainingAmount = targetAmount - currentAmount;
+    const monthsNeeded = Math.ceil(remainingAmount / monthlyContribution);
+
+    if (monthsNeeded <= monthsToTarget) {
+      return { status: "on-track", months: monthsNeeded };
+    } else {
+      return { status: "behind", months: monthsNeeded };
+    }
+  };
 
   if (loading) {
-    return (
-      <div className='flex items-center justify-center h-64'>
-        <LoadingSpinner />
-        <span className='ml-2 text-muted-foreground'>
-          Loading savings goals...
-        </span>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
-  if (savingsGoals.length === 0) {
+  if (error) {
     return (
-      <EmptyState
-        icon={<Target className='h-6 w-6' />}
-        title='No savings goals yet'
-        description='Create your first savings goal to start tracking your financial progress.'
-        action={{
-          label: "Add Goal",
-          onClick: () => {
-            console.log("[v0] Add Goal clicked from empty state");
-            setIsAddDialogOpen(true);
-          },
-        }}
-      />
+      <div className='text-center py-8'>
+        <p className='text-red-600 mb-4'>{error}</p>
+        <Button onClick={fetchGoals}>Try Again</Button>
+      </div>
     );
   }
 
   return (
     <div className='space-y-6'>
-      {/* Summary Cards */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-        <Card>
-          <CardContent className='p-6'>
-            <div className='flex items-center space-x-2'>
-              <DollarSign className='h-5 w-5 text-green-600' />
-              <div>
-                <p className='text-sm text-muted-foreground'>Total Saved</p>
-                <p className='text-2xl font-bold text-green-600 dark:text-green-400'>
-                  {formatCurrency(totalSaved)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className='p-6'>
-            <div className='flex items-center space-x-2'>
-              <Target className='h-5 w-5 text-blue-600' />
-              <div>
-                <p className='text-sm text-muted-foreground'>Total Target</p>
-                <p className='text-2xl font-bold text-blue-600 dark:text-blue-400'>
-                  {formatCurrency(totalTarget)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className='p-6'>
-            <div className='flex items-center space-x-2'>
-              <TrendingUp className='h-5 w-5 text-purple-600' />
-              <div>
-                <p className='text-sm text-muted-foreground'>
-                  Monthly Contributions
-                </p>
-                <p className='text-2xl font-bold text-purple-600 dark:text-purple-400'>
-                  {formatCurrency(totalMonthlyContributions)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Goals Header */}
-      <div className='flex items-center justify-between'>
+      <div className='flex justify-between items-center'>
         <div>
-          <h2 className='text-2xl font-bold text-foreground'>
-            Your Savings Goals
-          </h2>
+          <h2 className='text-2xl font-bold tracking-tight'>Savings Goals</h2>
           <p className='text-muted-foreground'>
-            Track your progress towards financial milestones
+            Track your progress towards financial goals
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddingGoal} onOpenChange={setIsAddingGoal}>
           <DialogTrigger asChild>
-            <Button
-              onClick={() => {
-                console.log("[v0] Add Goal button clicked");
-                setIsAddDialogOpen(true);
-              }}
-            >
-              <Plus className='h-4 w-4 mr-2' />
+            <Button>
+              <PlusIcon className='w-4 h-4 mr-2' />
               Add Goal
             </Button>
           </DialogTrigger>
@@ -352,298 +302,381 @@ export function SavingsGoals() {
             <DialogHeader>
               <DialogTitle>Add New Savings Goal</DialogTitle>
               <DialogDescription>
-                Create a new savings goal to track your financial progress.
+                Set up a new savings goal to track your progress.
               </DialogDescription>
             </DialogHeader>
-            <div className='space-y-4'>
-              <div>
-                <Label htmlFor='goalName'>Goal Name</Label>
+            <div className='grid gap-4 py-4'>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor='name' className='text-right'>
+                  Name
+                </Label>
                 <Input
-                  id='goalName'
-                  placeholder='e.g., Emergency Fund'
+                  id='name'
                   value={newGoal.name}
                   onChange={(e) =>
-                    setNewGoal((prev) => ({ ...prev, name: e.target.value }))
+                    setNewGoal({ ...newGoal, name: e.target.value })
                   }
+                  className='col-span-3'
+                  placeholder='Emergency Fund'
                 />
               </div>
-              <div>
-                <Label htmlFor='targetAmount'>Target Amount</Label>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor='category' className='text-right'>
+                  Category
+                </Label>
+                <Input
+                  id='category'
+                  value={newGoal.category}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, category: e.target.value })
+                  }
+                  className='col-span-3'
+                  placeholder='Emergency, Travel, etc.'
+                />
+              </div>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor='targetAmount' className='text-right'>
+                  Target Amount
+                </Label>
                 <Input
                   id='targetAmount'
                   type='number'
-                  placeholder='10000'
                   value={newGoal.targetAmount}
                   onChange={(e) =>
-                    setNewGoal((prev) => ({
-                      ...prev,
-                      targetAmount: e.target.value,
-                    }))
+                    setNewGoal({ ...newGoal, targetAmount: e.target.value })
                   }
+                  className='col-span-3'
+                  placeholder='10000'
                 />
               </div>
-              <div>
-                <Label htmlFor='monthlyContribution'>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor='currentAmount' className='text-right'>
+                  Current Amount
+                </Label>
+                <Input
+                  id='currentAmount'
+                  type='number'
+                  value={newGoal.currentAmount}
+                  onChange={(e) =>
+                    setNewGoal({ ...newGoal, currentAmount: e.target.value })
+                  }
+                  className='col-span-3'
+                  placeholder='0'
+                />
+              </div>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor='monthlyContribution' className='text-right'>
                   Monthly Contribution
                 </Label>
                 <Input
                   id='monthlyContribution'
                   type='number'
-                  placeholder='500'
                   value={newGoal.monthlyContribution}
                   onChange={(e) =>
-                    setNewGoal((prev) => ({
-                      ...prev,
+                    setNewGoal({
+                      ...newGoal,
                       monthlyContribution: e.target.value,
-                    }))
+                    })
                   }
+                  className='col-span-3'
+                  placeholder='500'
                 />
               </div>
-              <div>
-                <Label htmlFor='category'>Category</Label>
-                <select
-                  id='category'
-                  className='w-full p-2 border rounded-md'
-                  value={newGoal.category}
-                  onChange={(e) =>
-                    setNewGoal((prev) => ({
-                      ...prev,
-                      category: e.target.value,
-                    }))
-                  }
-                >
-                  <option value='Emergency'>Emergency</option>
-                  <option value='Entertainment'>Entertainment</option>
-                  <option value='Technology'>Technology</option>
-                  <option value='Travel'>Travel</option>
-                  <option value='Education'>Education</option>
-                  <option value='Health'>Health</option>
-                  <option value='Other'>Other</option>
-                </select>
-              </div>
-              <div>
-                <Label htmlFor='targetDate'>Target Date (Optional)</Label>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <Label htmlFor='targetDate' className='text-right'>
+                  Target Date
+                </Label>
                 <Input
                   id='targetDate'
                   type='date'
                   value={newGoal.targetDate}
                   onChange={(e) =>
-                    setNewGoal((prev) => ({
-                      ...prev,
-                      targetDate: e.target.value,
-                    }))
+                    setNewGoal({ ...newGoal, targetDate: e.target.value })
                   }
+                  className='col-span-3'
                 />
               </div>
-              <Button className='w-full' onClick={createSavingsGoal}>
-                Create Goal
+            </div>
+            <div className='flex justify-end gap-2'>
+              <Button variant='outline' onClick={() => setIsAddingGoal(false)}>
+                Cancel
               </Button>
+              <Button onClick={createGoal}>Create Goal</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Goals Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {savingsGoals.map((goal) => {
-          const progressPercentage = getProgressPercentage(
-            goal.currentAmount,
-            goal.targetAmount
-          );
-          const monthsToGoal = getMonthsToGoal(
-            goal.currentAmount,
-            goal.targetAmount,
-            goal.monthlyContribution
-          );
-          const isCompleted = goal.isCompleted || progressPercentage >= 100;
+      {goals.length === 0 ? (
+        <div className='text-center py-12'>
+          <Target className='mx-auto h-12 w-12 text-muted-foreground' />
+          <h3 className='mt-4 text-lg font-semibold'>No savings goals yet</h3>
+          <p className='text-muted-foreground'>
+            Start by creating your first savings goal.
+          </p>
+        </div>
+      ) : (
+        <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+          {goals.map((goal) => {
+            const progress = calculateProgress(
+              goal.currentAmount,
+              goal.targetAmount
+            );
+            const timeToGoal = getTimeToGoal(
+              goal.targetDate,
+              goal.monthlyContribution,
+              goal.currentAmount,
+              goal.targetAmount
+            );
+            const isEditing = editingGoal === goal.id;
 
-          return (
-            <Card
-              key={goal.id}
-              className={cn(
-                "relative overflow-hidden",
-                isCompleted && "ring-2 ring-green-500"
-              )}
-            >
-              {/* Color accent bar */}
-              <div
-                className={cn(
-                  "absolute top-0 left-0 right-0 h-1",
-                  categoryColors[goal.category] || "bg-gray-500"
-                )}
-              />
-
-              <CardHeader className='pb-3'>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <CardTitle className='text-lg'>{goal.name}</CardTitle>
-                    <Badge variant='secondary' className='mt-1 text-xs'>
-                      {goal.category}
-                    </Badge>
+            return (
+              <Card
+                key={goal.id}
+                className={`h-full ${
+                  goal.isCompleted ? "border-green-500" : ""
+                }`}
+              >
+                <CardHeader className='pb-4'>
+                  <div className='flex items-center justify-between'>
+                    {isEditing ? (
+                      <Input
+                        value={editGoal.name || goal.name}
+                        onChange={(e) =>
+                          setEditGoal({ ...editGoal, name: e.target.value })
+                        }
+                        className='text-lg font-semibold'
+                      />
+                    ) : (
+                      <CardTitle className='text-lg'>{goal.name}</CardTitle>
+                    )}
+                    <div className='flex items-center gap-2'>
+                      {goal.isCompleted && (
+                        <Badge variant='default'>Completed</Badge>
+                      )}
+                      <Badge variant='secondary'>
+                        {isEditing ? (
+                          <Input
+                            value={editGoal.category || goal.category}
+                            onChange={(e) =>
+                              setEditGoal({
+                                ...editGoal,
+                                category: e.target.value,
+                              })
+                            }
+                            className='w-20 h-6 text-xs'
+                          />
+                        ) : (
+                          goal.category
+                        )}
+                      </Badge>
+                    </div>
                   </div>
-                  {isCompleted && (
-                    <Badge
-                      variant='default'
-                      className='bg-green-500 text-white'
-                    >
-                      Complete!
-                    </Badge>
+                  <CardDescription className='flex items-center text-sm'>
+                    <Target className='w-4 h-4 mr-1' />
+                    {isEditing ? (
+                      <Input
+                        type='number'
+                        value={editGoal.targetAmount || goal.targetAmount}
+                        onChange={(e) =>
+                          setEditGoal({
+                            ...editGoal,
+                            targetAmount: parseFloat(e.target.value),
+                          })
+                        }
+                        className='w-24 h-6'
+                      />
+                    ) : (
+                      formatCurrency(goal.targetAmount)
+                    )}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className='space-y-4'>
+                  <div className='space-y-2'>
+                    <div className='flex justify-between text-sm'>
+                      <span>Progress</span>
+                      <span>{progress.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={progress} className='h-2' />
+                    <div className='flex justify-between text-sm text-muted-foreground'>
+                      <span>
+                        {isEditing ? (
+                          <Input
+                            type='number'
+                            value={editGoal.currentAmount || goal.currentAmount}
+                            onChange={(e) =>
+                              setEditGoal({
+                                ...editGoal,
+                                currentAmount: parseFloat(e.target.value),
+                              })
+                            }
+                            className='w-20 h-6 text-xs'
+                          />
+                        ) : (
+                          formatCurrency(goal.currentAmount)
+                        )}
+                      </span>
+                      <span>{formatCurrency(goal.targetAmount)}</span>
+                    </div>
+                  </div>
+
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex items-center justify-between'>
+                      <span className='flex items-center'>
+                        <DollarSign className='w-4 h-4 mr-1' />
+                        Monthly contribution
+                      </span>
+                      <span className='font-medium'>
+                        {isEditing ? (
+                          <Input
+                            type='number'
+                            value={
+                              editGoal.monthlyContribution ||
+                              goal.monthlyContribution
+                            }
+                            onChange={(e) =>
+                              setEditGoal({
+                                ...editGoal,
+                                monthlyContribution: parseFloat(e.target.value),
+                              })
+                            }
+                            className='w-20 h-6 text-xs'
+                          />
+                        ) : (
+                          formatCurrency(goal.monthlyContribution)
+                        )}
+                      </span>
+                    </div>
+
+                    <div className='flex items-center justify-between'>
+                      <span className='flex items-center'>
+                        <Calendar className='w-4 h-4 mr-1' />
+                        Target date
+                      </span>
+                      <span className='font-medium'>
+                        {isEditing ? (
+                          <Input
+                            type='date'
+                            value={
+                              editGoal.targetDate ||
+                              goal.targetDate?.split("T")[0] ||
+                              ""
+                            }
+                            onChange={(e) =>
+                              setEditGoal({
+                                ...editGoal,
+                                targetDate: e.target.value,
+                              })
+                            }
+                            className='w-32 h-6 text-xs'
+                          />
+                        ) : (
+                          formatDate(goal.targetDate)
+                        )}
+                      </span>
+                    </div>
+
+                    {!goal.isCompleted && (
+                      <div className='flex items-center justify-between'>
+                        <span>Time to goal</span>
+                        <Badge
+                          variant={
+                            timeToGoal.status === "on-track"
+                              ? "default"
+                              : "destructive"
+                          }
+                        >
+                          {timeToGoal.months} months
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className='flex gap-2 pt-2'>
+                    {isEditing ? (
+                      <>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => updateGoal(goal.id)}
+                        >
+                          <Check className='w-4 h-4' />
+                        </Button>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => setEditingGoal(null)}
+                        >
+                          <X className='w-4 h-4' />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => {
+                            setEditingGoal(goal.id);
+                            setEditGoal(goal);
+                          }}
+                        >
+                          <Edit className='w-4 h-4' />
+                        </Button>
+                        {!goal.isCompleted && (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => setAddingContribution(goal.id)}
+                          >
+                            Add Funds
+                          </Button>
+                        )}
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => deleteGoal(goal.id)}
+                        >
+                          <Trash2 className='w-4 h-4' />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {addingContribution === goal.id && (
+                    <div className='space-y-2 pt-2 border-t'>
+                      <Label>Add Contribution Amount</Label>
+                      <div className='flex gap-2'>
+                        <Input
+                          type='number'
+                          value={contributionAmount}
+                          onChange={(e) =>
+                            setContributionAmount(e.target.value)
+                          }
+                          placeholder='0.00'
+                        />
+                        <Button
+                          size='sm'
+                          onClick={() => addContribution(goal.id)}
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          onClick={() => setAddingContribution(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
                   )}
-                </div>
-              </CardHeader>
-
-              <CardContent className='space-y-4'>
-                {/* Progress */}
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between text-sm'>
-                    <span className='text-muted-foreground'>Progress</span>
-                    <span className='font-medium'>
-                      {Math.round(progressPercentage)}%
-                    </span>
-                  </div>
-                  <Progress value={progressPercentage} className='h-2' />
-                </div>
-
-                {/* Amounts */}
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>
-                      Current
-                    </span>
-                    <span className='font-semibold text-green-600 dark:text-green-400'>
-                      {formatCurrency(goal.currentAmount)}
-                    </span>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>
-                      Target
-                    </span>
-                    <span className='font-semibold'>
-                      {formatCurrency(goal.targetAmount)}
-                    </span>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>
-                      Monthly
-                    </span>
-                    <span className='font-semibold text-blue-600 dark:text-blue-400'>
-                      {formatCurrency(goal.monthlyContribution)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Time to goal */}
-                {!isCompleted && (
-                  <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
-                    <Calendar className='h-4 w-4' />
-                    <span>
-                      {monthsToGoal === "∞"
-                        ? "No monthly contribution"
-                        : `${monthsToGoal} months to goal`}
-                    </span>
-                  </div>
-                )}
-
-                {/* Target date */}
-                {goal.targetDate && (
-                  <div className='text-sm text-muted-foreground'>
-                    Target: {new Date(goal.targetDate).toLocaleDateString()}
-                  </div>
-                )}
-
-                <Button
-                  variant='outline'
-                  className='w-full bg-transparent'
-                  onClick={() => handleUpdateProgressClick(goal)}
-                >
-                  <Edit2 className='h-4 w-4 mr-2' />
-                  Update Progress
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Progress: {editingGoal?.name}</DialogTitle>
-            <DialogDescription>
-              Add money to your savings goal.
-            </DialogDescription>
-          </DialogHeader>
-          <div className='space-y-4'>
-            <div>
-              <Label htmlFor='updateAmount'>Amount to Add</Label>
-              <Input
-                id='updateAmount'
-                type='number'
-                placeholder='100'
-                value={updateAmount}
-                onChange={(e) => setUpdateAmount(e.target.value)}
-              />
-            </div>
-            {editingGoal && (
-              <div className='text-sm text-muted-foreground'>
-                Current: {formatCurrency(editingGoal.currentAmount)} → New:{" "}
-                {formatCurrency(
-                  editingGoal.currentAmount +
-                    (Number.parseFloat(updateAmount) || 0)
-                )}
-              </div>
-            )}
-            <Button
-              className='w-full'
-              onClick={updateGoalProgress}
-              disabled={!updateAmount || Number.parseFloat(updateAmount) <= 0}
-            >
-              Update Progress
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Overall Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Overall Savings Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <span className='text-muted-foreground'>Total Progress</span>
-              <span className='font-semibold'>
-                {Math.round(getProgressPercentage(totalSaved, totalTarget))}%
-              </span>
-            </div>
-            <Progress
-              value={getProgressPercentage(totalSaved, totalTarget)}
-              className='h-3'
-            />
-            <div className='grid grid-cols-2 gap-4 text-sm'>
-              <div>
-                <span className='text-muted-foreground'>
-                  Remaining to save:
-                </span>
-                <p className='font-semibold text-lg'>
-                  {formatCurrency(totalTarget - totalSaved)}
-                </p>
-              </div>
-              <div>
-                <span className='text-muted-foreground'>At current rate:</span>
-                <p className='font-semibold text-lg'>
-                  {totalMonthlyContributions > 0
-                    ? `${Math.ceil(
-                        (totalTarget - totalSaved) / totalMonthlyContributions
-                      )} months`
-                    : "∞ months"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
