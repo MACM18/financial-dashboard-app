@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-background'>
+      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950 dark:via-indigo-950 dark:to-purple-950'>
         <div className='text-center space-y-4'>
           <LoadingSpinner size='lg' />
           <p className='text-muted-foreground'>Loading...</p>
@@ -32,8 +32,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-background p-4'>
-      <div className='w-full max-w-md space-y-6'>
+    <div className='min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950 dark:via-indigo-950 dark:to-purple-950 flex items-center justify-center p-4'>
+      <div className='absolute inset-0 bg-grid-pattern opacity-10 dark:opacity-5' />
+      <div className='relative z-10 w-full max-w-md'>
         <LoginForm />
       </div>
     </div>

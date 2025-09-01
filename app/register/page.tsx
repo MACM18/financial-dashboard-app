@@ -18,7 +18,7 @@ export default function RegisterPage() {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-background'>
+      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950 dark:via-teal-950 dark:to-cyan-950'>
         <div className='text-center space-y-4'>
           <LoadingSpinner size='lg' />
           <p className='text-muted-foreground'>Loading...</p>
@@ -32,8 +32,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className='min-h-screen flex items-center justify-center bg-background p-4'>
-      <div className='w-full max-w-md space-y-6'>
+    <div className='min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950 dark:via-teal-950 dark:to-cyan-950 flex items-center justify-center p-4'>
+      <div className='absolute inset-0 bg-grid-pattern opacity-10 dark:opacity-5' />
+      <div className='relative z-10 w-full max-w-md'>
         <RegisterForm />
       </div>
     </div>
