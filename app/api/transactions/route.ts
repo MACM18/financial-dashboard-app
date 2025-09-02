@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
         tc.color as category_color,
         tc.is_income as category_is_income
       FROM transactions t
-      JOIN accounts a ON t.account_id = a.id
-      JOIN account_types at ON a.account_type_id = at.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN account_types at ON a.account_type_id = at.id
       JOIN transaction_categories tc ON t.category_id = tc.id
       WHERE t.user_id = ${userId}
         ${accountId ? sql`AND t.account_id = ${parseInt(accountId)}` : sql``}
@@ -82,12 +82,19 @@ export async function GET(request: NextRequest) {
       recurringFrequency: transaction.recurring_frequency,
       tags: transaction.tags || [],
       notes: transaction.notes,
-      account: {
+      account: transaction.account_name ? {
         name: transaction.account_name,
         currency: transaction.account_currency,
         type: {
           name: transaction.account_type,
           icon: transaction.account_type_icon
+        }
+      } : {
+        name: 'Deleted Account',
+        currency: 'USD',
+        type: {
+          name: 'deleted',
+          icon: 'MoreHorizontal'
         }
       },
       category: {
@@ -222,8 +229,8 @@ export async function POST(request: NextRequest) {
         tc.color as category_color,
         tc.is_income as category_is_income
       FROM transactions t
-      JOIN accounts a ON t.account_id = a.id
-      JOIN account_types at ON a.account_type_id = at.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN account_types at ON a.account_type_id = at.id
       JOIN transaction_categories tc ON t.category_id = tc.id
       WHERE t.id = ${result[0].id}
     `
@@ -237,12 +244,19 @@ export async function POST(request: NextRequest) {
       recurringFrequency: completeTransaction[0].recurring_frequency,
       tags: completeTransaction[0].tags || [],
       notes: completeTransaction[0].notes,
-      account: {
+      account: completeTransaction[0].account_name ? {
         name: completeTransaction[0].account_name,
         currency: completeTransaction[0].account_currency,
         type: {
           name: completeTransaction[0].account_type,
           icon: completeTransaction[0].account_type_icon
+        }
+      } : {
+        name: 'Deleted Account',
+        currency: 'USD',
+        type: {
+          name: 'deleted',
+          icon: 'MoreHorizontal'
         }
       },
       category: {
@@ -345,8 +359,8 @@ export async function PUT(request: NextRequest) {
         tc.color as category_color,
         tc.is_income as category_is_income
       FROM transactions t
-      JOIN accounts a ON t.account_id = a.id
-      JOIN account_types at ON a.account_type_id = at.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN account_types at ON a.account_type_id = at.id
       JOIN transaction_categories tc ON t.category_id = tc.id
       WHERE t.id = ${parseInt(id)}
     `
@@ -360,12 +374,19 @@ export async function PUT(request: NextRequest) {
       recurringFrequency: updatedTransaction[0].recurring_frequency,
       tags: updatedTransaction[0].tags || [],
       notes: updatedTransaction[0].notes,
-      account: {
+      account: updatedTransaction[0].account_name ? {
         name: updatedTransaction[0].account_name,
         currency: updatedTransaction[0].account_currency,
         type: {
           name: updatedTransaction[0].account_type,
           icon: updatedTransaction[0].account_type_icon
+        }
+      } : {
+        name: 'Deleted Account',
+        currency: 'USD',
+        type: {
+          name: 'deleted',
+          icon: 'MoreHorizontal'
         }
       },
       category: {
