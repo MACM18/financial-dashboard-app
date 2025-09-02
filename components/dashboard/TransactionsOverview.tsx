@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AddTransactionForm } from "./AddTransactionForm";
 import {
@@ -63,6 +64,7 @@ interface TransactionsResponse {
 
 export function TransactionsOverview() {
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,12 +135,7 @@ export function TransactionsOverview() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(Math.abs(amount));
-  };
+  // Currency formatting is now handled by the useCurrency hook
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {

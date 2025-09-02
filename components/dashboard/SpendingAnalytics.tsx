@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
   AreaChart,
@@ -52,6 +53,7 @@ interface AnalyticsData {
 
 export function SpendingAnalytics() {
   const { user } = useAuth();
+  const { formatCurrency, getCurrencySymbol } = useCurrency();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -209,12 +211,7 @@ export function SpendingAnalytics() {
     "#8b5a2b", // brown
   ];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  // Currency formatting is now handled by the useCurrency hook
 
   if (loading) {
     return (
@@ -328,7 +325,7 @@ export function SpendingAnalytics() {
                     <YAxis
                       className='text-xs'
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => [
@@ -389,7 +386,7 @@ export function SpendingAnalytics() {
                     <YAxis
                       className='text-xs'
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      tickFormatter={(value) => `${getCurrencySymbol()}${value.toLocaleString()}`}
                     />
                     <Tooltip
                       formatter={(value: number) => [
@@ -528,7 +525,7 @@ export function SpendingAnalytics() {
                         type='number'
                         tick={{ fontSize: 10 }}
                         tickFormatter={(value) =>
-                          `$${(value / 1000).toFixed(0)}k`
+                          `${getCurrencySymbol()}${(value / 1000).toFixed(0)}k`
                         }
                       />
                       <YAxis

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -71,6 +72,7 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { formatCurrency: userFormatCurrency, getCurrencySymbol } = useCurrency();
   const [stats, setStats] = useState<SidebarStats | null>(null);
 
   useEffect(() => {
@@ -127,14 +129,15 @@ export function Sidebar({ className }: SidebarProps) {
   };
 
   const formatCurrency = (amount: number) => {
-    if (amount === 0) return "$0";
+    const symbol = getCurrencySymbol();
+    if (amount === 0) return `${symbol}0`;
     if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
+      return `${symbol}${(amount / 1000000).toFixed(1)}M`;
     }
     if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
+      return `${symbol}${(amount / 1000).toFixed(1)}K`;
     }
-    return `$${Math.round(amount).toLocaleString()}`;
+    return `${symbol}${Math.round(amount).toLocaleString()}`;
   };
 
   return (
