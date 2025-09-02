@@ -51,7 +51,7 @@ export default function SettingsPage() {
   const [showAccountTypesManager, setShowAccountTypesManager] = useState(false);
   const [showCategoriesManager, setShowCategoriesManager] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences>({
-    currency: "USD",
+    currency: "LKR",
     budgetAlerts: true,
     goalReminders: true,
     paymentDue: true,
@@ -60,7 +60,7 @@ export default function SettingsPage() {
   const [profileData, setProfileData] = useState({
     name: user?.displayName || "",
     email: user?.email || "",
-    currency: "USD",
+    currency: "LKR",
   });
 
   console.log("[v0] Settings page rendering, user:", user?.id);
@@ -79,7 +79,7 @@ export default function SettingsPage() {
       // For now, we'll use default preferences since there's no API endpoint yet
       // In a real app, you would call: await fetch('/api/user/preferences')
       const defaultPrefs = {
-        currency: "USD",
+        currency: "LKR",
         budgetAlerts: true,
         goalReminders: true,
         paymentDue: true,
@@ -296,6 +296,7 @@ export default function SettingsPage() {
                 <option value='GBP'>GBP - British Pound</option>
                 <option value='CAD'>CAD - Canadian Dollar</option>
                 <option value='AUD'>AUD - Australian Dollar</option>
+                <option value='LKR'>LKR - Sri Lankan Rupee</option>
               </select>
             </div>
             <Button
