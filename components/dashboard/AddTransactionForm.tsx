@@ -117,8 +117,7 @@ export function AddTransactionForm({
     if (
       !formData.accountId ||
       !formData.categoryName ||
-      !formData.amount ||
-      !formData.description
+      !formData.amount
     ) {
       setError("Please fill in all required fields");
       return;
@@ -422,14 +421,8 @@ export function AddTransactionForm({
 
             {/* Description */}
             <div className='space-y-2'>
-              <Label htmlFor='description' className='flex items-center gap-1'>
-                Description
-                <span className='text-red-500'>*</span>
-                {!formData.description && (
-                  <span className='text-xs text-red-500 ml-2 animate-pulse'>
-                    Required
-                  </span>
-                )}
+              <Label htmlFor='description'>
+                Description (Optional)
               </Label>
               <Input
                 id='description'
@@ -442,21 +435,7 @@ export function AddTransactionForm({
                     ? "e.g., Salary payment"
                     : "e.g., Grocery shopping"
                 }
-                className={`transition-all duration-200 ${
-                  !formData.description
-                    ? "border-red-300 dark:border-red-700 focus:border-red-500 dark:focus:border-red-400 bg-red-50/50 dark:bg-red-950/20"
-                    : formData.description.length > 0
-                    ? "border-green-300 dark:border-green-700 focus:border-green-500 dark:focus:border-green-400 bg-green-50/50 dark:bg-green-950/20"
-                    : ""
-                }`}
-                required
               />
-              {!formData.description && (
-                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
-                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
-                  Please add a description for this transaction
-                </p>
-              )}
             </div>
 
             {/* Date */}
@@ -500,8 +479,7 @@ export function AddTransactionForm({
               {/* Validation Status */}
               {(!formData.accountId ||
                 !formData.categoryName ||
-                !formData.amount ||
-                !formData.description) && (
+                !formData.amount) && (
                 <div className='flex items-center text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-md'>
                   <span className='w-1 h-1 bg-red-500 rounded-full mr-2'></span>
                   {!formData.accountId
@@ -510,8 +488,6 @@ export function AddTransactionForm({
                     ? "Select category"
                     : !formData.amount
                     ? "Enter amount"
-                    : !formData.description
-                    ? "Add description"
                     : ""}
                 </div>
               )}
@@ -522,15 +498,13 @@ export function AddTransactionForm({
                   submitting ||
                   !formData.accountId ||
                   !formData.categoryName ||
-                  !formData.amount ||
-                  !formData.description
+                  !formData.amount
                 }
                 className={`text-white transition-all duration-200 ${
                   submitting ||
                   !formData.accountId ||
                   !formData.categoryName ||
-                  !formData.amount ||
-                  !formData.description
+                  !formData.amount
                     ? "bg-gray-400 cursor-not-allowed"
                     : transactionType === "income"
                     ? "bg-green-600 hover:bg-green-700 hover:scale-105 shadow-lg"
