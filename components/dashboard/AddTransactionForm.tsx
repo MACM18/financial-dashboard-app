@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
 import { ManageTransactionCategories } from "./ManageTransactionCategories";
@@ -56,6 +57,7 @@ export function AddTransactionForm({
   onTransactionAdded,
 }: AddTransactionFormProps) {
   const { user } = useAuth();
+  const { getCurrencySymbol } = useCurrency();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -387,9 +389,7 @@ export function AddTransactionForm({
               </Label>
               <div className='relative'>
                 <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground'>
-                  {selectedAccount?.currency === "USD"
-                    ? "$"
-                    : selectedAccount?.currency || "$"}
+                  {getCurrencySymbol()}
                 </span>
                 <Input
                   id='amount'

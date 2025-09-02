@@ -32,6 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface SavingsGoal {
@@ -47,6 +48,7 @@ interface SavingsGoal {
 
 export function SavingsGoals() {
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -221,12 +223,7 @@ export function SavingsGoals() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  // Currency formatting is now handled by the useCurrency hook
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "No target date";

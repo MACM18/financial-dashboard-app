@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 import { neon } from "@neondatabase/serverless"
+import { formatCurrency } from "@/lib/currency"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -81,31 +82,44 @@ export async function GET(request: NextRequest) {
     const spendingChange = prevSpent > 0 ? ((totalSpent - prevSpent) / prevSpent) * 100 : 0
     const savingsProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0
 
+    // Get user currency preference
+    let userCurrency = 'LKR'; // Default to LKR
+    try {
+      const preferencesResult = await sql`
+        SELECT currency FROM user_preferences WHERE user_id = ${userId}
+      `;
+      if (preferencesResult[0]) {
+        userCurrency = preferencesResult[0].currency || 'LKR';
+      }
+    } catch (error) {
+      console.log('Could not fetch user currency preference, using LKR as default');
+    }
+
     const stats = [
       {
         title: `${monthName} Budget`,
-        value: `$${totalBudget.toFixed(2)}`,
-        change: remaining >= 0 ? `$${remaining.toFixed(2)} remaining` : `$${Math.abs(remaining).toFixed(2)} over budget`,
+        value: formatCurrency(totalBudget, userCurrency),
+        change: remaining >= 0 ? `${formatCurrency(remaining, userCurrency)} remaining` : `${formatCurrency(Math.abs(remaining), userCurrency)} over budget`,
         trend: remaining >= 0 ? "up" : "down" as "up" | "down",
         icon: "DollarSign"
       },
       {
         title: "Total Spent",
-        value: `$${totalSpent.toFixed(2)}`,
+        value: formatCurrency(totalSpent, userCurrency),
         change: `${spentPercentage.toFixed(1)}% of budget`,
         trend: spentPercentage <= 80 ? "up" : "down" as "up" | "down",
         icon: "TrendingDown"
       },
       {
         title: "Savings Progress",
-        value: `$${totalSaved.toFixed(2)}`,
+        value: formatCurrency(totalSaved, userCurrency),
         change: `${savingsProgress.toFixed(1)}% of goal`,
         trend: savingsProgress > 0 ? "up" : "down" as "up" | "down",
         icon: "Target"
       },
       {
         title: "Total Debt",
-        value: `$${totalDebt.toFixed(2)}`,
+        value: formatCurrency(totalDebt, userCurrency),
         change: totalDebt > 0 ? "Active debts" : "Debt free!",
         trend: totalDebt === 0 ? "up" : "down" as "up" | "down",
         icon: "TrendingUp"

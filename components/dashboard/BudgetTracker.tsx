@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 
 type BudgetRow = {
   id?: string;
@@ -35,6 +36,7 @@ const DEFAULT_CATEGORIES = [
 
 export function BudgetTracker() {
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const [rows, setRows] = useState<BudgetRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -283,8 +285,8 @@ export function BudgetTracker() {
         <TableFooter>
           <TableRow>
             <TableCell>Totals</TableCell>
-            <TableCell>{totals.budgeted.toFixed(2)}</TableCell>
-            <TableCell>{totals.actual.toFixed(2)}</TableCell>
+            <TableCell>{formatCurrency(totals.budgeted)}</TableCell>
+            <TableCell>{formatCurrency(totals.actual)}</TableCell>
             <TableCell />
             <TableCell />
           </TableRow>

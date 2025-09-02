@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { EmptyState } from "./EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface Debt {
   id: string;
@@ -94,6 +95,7 @@ const debtTypeColors: { [key: string]: string } = {
 
 export function DebtTracker() {
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -199,12 +201,7 @@ export function DebtTracker() {
     setIsScheduleDialogOpen(true);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  // Currency formatting is now handled by the useCurrency hook
 
   const togglePaymentStatus = (debtId: string, paymentId: string) => {
     console.log(`[v0] Toggle payment ${paymentId} for debt ${debtId}`);

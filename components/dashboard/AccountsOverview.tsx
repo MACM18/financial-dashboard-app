@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AddAccountForm } from "./AddAccountForm";
 import { EditAccountForm } from "./EditAccountForm";
@@ -57,6 +58,7 @@ const AccountIcons = {
 
 export function AccountsOverview() {
   const { user } = useAuth();
+  const { formatCurrency: formatUserCurrency } = useCurrency();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,11 +95,9 @@ export function AccountsOverview() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(amount);
+  // Use user's currency preference for display
+  const formatCurrency = (amount: number) => {
+    return formatUserCurrency(amount);
   };
 
   const getTotalBalance = () => {
@@ -272,7 +272,7 @@ export function AccountsOverview() {
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {formatCurrency(account.balance, account.currency)}
+                        {formatCurrency(account.balance)}
                       </p>
                       <p className='text-xs text-muted-foreground'>
                         {new Date(account.createdAt).toLocaleDateString()}

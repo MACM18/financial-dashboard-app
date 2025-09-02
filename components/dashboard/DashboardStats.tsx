@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Target } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface DashboardStat {
@@ -27,6 +28,7 @@ export function DashboardStats() {
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
 
   console.log(
     "[v0] DashboardStats rendering, user:",
@@ -79,14 +81,14 @@ export function DashboardStats() {
       setStats([
         {
           title: "Total Budget",
-          value: "$0",
+          value: formatCurrency(0),
           change: "Set up your budget",
           trend: "up" as const,
           icon: DollarSign,
         },
         {
           title: "Monthly Spending",
-          value: "$0",
+          value: formatCurrency(0),
           change: "No spending tracked",
           trend: "down" as const,
           icon: TrendingDown,
@@ -100,7 +102,7 @@ export function DashboardStats() {
         },
         {
           title: "Debt Remaining",
-          value: "$0",
+          value: formatCurrency(0),
           change: "No debts tracked",
           trend: "down" as const,
           icon: TrendingUp,
