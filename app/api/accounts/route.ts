@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = authHeader.replace('Bearer ', '')
-    const { name, accountType, balance = 0, currency = 'USD', description = '' } = await request.json()
+    const { name, accountType, balance = 0, currency = 'LKR', description = '' } = await request.json()
 
     if (!userId || !name || !accountType) {
       return NextResponse.json({ 
@@ -138,7 +138,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = authHeader.replace('Bearer ', '')
-    const { id, name, description, isActive } = await request.json()
+    const { id, name, description, isActive, balance } = await request.json()
 
     if (!userId || !id) {
       return NextResponse.json({ 
@@ -149,8 +149,9 @@ export async function PUT(request: NextRequest) {
     const result = await sql`
       UPDATE accounts 
       SET 
-        name = ${name},
-        description = ${description},
+        name = COALESCE(${name}, name),
+        description = COALESCE(${description}, description),
+        balance = COALESCE(${balance}, balance),
         is_active = ${isActive !== undefined ? isActive : true},
         updated_at = NOW()
       WHERE id = ${parseInt(id)} AND user_id = ${userId}
@@ -209,17 +210,14 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if account has transactions
-    const transactionCount = await sql`
-      SELECT COUNT(*) as count FROM transactions WHERE account_id = ${parseInt(id)} AND user_id = ${userId}
+    // First, set account_id to NULL for all related transactions
+    await sql`
+      UPDATE transactions 
+      SET account_id = NULL, updated_at = NOW()
+      WHERE account_id = ${parseInt(id)} AND user_id = ${userId}
     `
 
-    if (transactionCount[0].count > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete account with existing transactions. Please deactivate instead.' 
-      }, { status: 400 })
-    }
-
+    // Then delete the account
     const result = await sql`
       DELETE FROM accounts 
       WHERE id = ${parseInt(id)} AND user_id = ${userId}

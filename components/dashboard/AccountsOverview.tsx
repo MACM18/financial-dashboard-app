@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AddAccountForm } from "./AddAccountForm";
+import { EditAccountForm } from "./EditAccountForm";
+import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import {
   Plus,
   CreditCard,
@@ -22,6 +24,8 @@ import {
   TrendingUp,
   Coins,
   MoreHorizontal,
+  Edit,
+  Trash2,
 } from "lucide-react";
 
 interface AccountType {
@@ -57,6 +61,9 @@ export function AccountsOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -120,6 +127,16 @@ export function AccountsOverview() {
     const IconComponent =
       AccountIcons[iconName as keyof typeof AccountIcons] || CreditCard;
     return <IconComponent className='h-5 w-5' />;
+  };
+
+  const handleEditAccount = (account: Account) => {
+    setSelectedAccount(account);
+    setShowEditForm(true);
+  };
+
+  const handleDeleteAccount = (account: Account) => {
+    setSelectedAccount(account);
+    setShowDeleteDialog(true);
   };
 
   if (loading) {
@@ -246,19 +263,41 @@ export function AccountsOverview() {
                       </div>
                     </div>
                   </div>
-                  <div className='text-right flex-shrink-0'>
-                    <p
-                      className={`font-semibold text-sm ${
-                        account.balance >= 0
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {formatCurrency(account.balance, account.currency)}
-                    </p>
-                    <p className='text-xs text-muted-foreground'>
-                      {new Date(account.createdAt).toLocaleDateString()}
-                    </p>
+                  <div className='flex items-center space-x-2'>
+                    <div className='text-right'>
+                      <p
+                        className={`font-semibold text-sm ${
+                          account.balance >= 0
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {formatCurrency(account.balance, account.currency)}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        {new Date(account.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className='flex flex-col space-y-1'>
+                      <Button
+                        onClick={() => handleEditAccount(account)}
+                        variant='ghost'
+                        size='sm'
+                        className='h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                        title='Edit account'
+                      >
+                        <Edit className='h-4 w-4 text-blue-600 dark:text-blue-400' />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteAccount(account)}
+                        variant='ghost'
+                        size='sm'
+                        className='h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/30'
+                        title='Delete account'
+                      >
+                        <Trash2 className='h-4 w-4 text-red-600 dark:text-red-400' />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -271,6 +310,20 @@ export function AccountsOverview() {
         open={showAddForm}
         onOpenChange={setShowAddForm}
         onAccountAdded={fetchAccounts}
+      />
+
+      <EditAccountForm
+        open={showEditForm}
+        onOpenChange={setShowEditForm}
+        onAccountUpdated={fetchAccounts}
+        account={selectedAccount}
+      />
+
+      <DeleteAccountDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onAccountDeleted={fetchAccounts}
+        account={selectedAccount}
       />
     </Card>
   );
