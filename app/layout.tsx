@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Suspense } from "react"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { CurrencyProvider } from "@/contexts/CurrencyContext"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
@@ -23,7 +24,9 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <AuthProvider>{children}</AuthProvider>
+            <CurrencyProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </CurrencyProvider>
           </ThemeProvider>
         </Suspense>
       </body>

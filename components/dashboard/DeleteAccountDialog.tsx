@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AlertTriangle, Trash2 } from "lucide-react";
 
@@ -42,6 +44,7 @@ export function DeleteAccountDialog({
   account,
 }: DeleteAccountDialogProps) {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,11 +77,8 @@ export function DeleteAccountDialog({
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(amount);
+  const formatCurrencyDisplay = (amount: number, accountCurrency?: string) => {
+    return formatCurrency(amount, accountCurrency || currency);
   };
 
   if (!account) return null;
@@ -112,7 +112,7 @@ export function DeleteAccountDialog({
             <div className="text-sm space-y-1">
               <p><strong>Name:</strong> {account.name}</p>
               <p><strong>Type:</strong> {account.accountType.description}</p>
-              <p><strong>Balance:</strong> {formatCurrency(account.balance, account.currency)}</p>
+              <p><strong>Balance:</strong> {formatCurrencyDisplay(account.balance, account.currency)}</p>
               {account.description && (
                 <p><strong>Description:</strong> {account.description}</p>
               )}

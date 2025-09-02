@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { SavingsGoals } from "@/components/dashboard/SavingsGoals";
 import { Button } from "@/components/ui/button";
 import {
@@ -157,6 +159,7 @@ const SAVINGS_PRIORITIES = {
 
 export default function SavingsPage() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const { toast } = useToast();
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -503,12 +506,9 @@ export default function SavingsPage() {
     })
     .sort((a, b) => a.months - b.months);
 
-  const formatCurrency = (amount: number): string => {
+  const formatCurrencyDisplay = (amount: number): string => {
     if (showPrivacyMode) return "••••••";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+    return formatCurrency(amount, currency);
   };
 
   const getInsightIcon = (iconName: string) => {
@@ -718,7 +718,7 @@ export default function SavingsPage() {
               <div>
                 <p className='text-sm text-muted-foreground'>Total Saved</p>
                 <p className='text-xl font-bold text-emerald-600 dark:text-emerald-400'>
-                  {formatCurrency(totalCurrentAmount)}
+                  {formatCurrencyDisplay(totalCurrentAmount)}
                 </p>
               </div>
             </div>
@@ -730,7 +730,7 @@ export default function SavingsPage() {
               <div>
                 <p className='text-sm text-muted-foreground'>Target Amount</p>
                 <p className='text-xl font-bold text-blue-600 dark:text-blue-400'>
-                  {formatCurrency(totalTargetAmount)}
+                  {formatCurrencyDisplay(totalTargetAmount)}
                 </p>
               </div>
             </div>
@@ -742,7 +742,7 @@ export default function SavingsPage() {
               <div>
                 <p className='text-sm text-muted-foreground'>Monthly Saving</p>
                 <p className='text-xl font-bold text-purple-600 dark:text-purple-400'>
-                  {formatCurrency(totalMonthlyContribution)}
+                  {formatCurrencyDisplay(totalMonthlyContribution)}
                 </p>
               </div>
             </div>
@@ -772,8 +772,8 @@ export default function SavingsPage() {
             </div>
             <Progress value={overallProgress} className='h-3' />
             <div className='flex justify-between text-xs text-muted-foreground'>
-              <span>{formatCurrency(totalCurrentAmount)} saved</span>
-              <span>{formatCurrency(totalTargetAmount)} target</span>
+              <span>{formatCurrencyDisplay(totalCurrentAmount)} saved</span>
+              <span>{formatCurrencyDisplay(totalTargetAmount)} target</span>
             </div>
           </div>
         </div>
@@ -835,7 +835,7 @@ export default function SavingsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1'>
-              {formatCurrency(remainingAmount)}
+              {formatCurrencyDisplay(remainingAmount)}
             </div>
             <p className='text-sm text-purple-700/70 dark:text-purple-300/70 mb-2'>
               Left to save
@@ -857,7 +857,7 @@ export default function SavingsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl sm:text-3xl font-bold text-orange-600 dark:text-orange-400 mb-1'>
-              {formatCurrency(totalMonthlyContribution)}
+              {formatCurrencyDisplay(totalMonthlyContribution)}
             </div>
             <p className='text-sm text-orange-700/70 dark:text-orange-300/70 mb-2'>
               Total monthly rate
@@ -1124,7 +1124,7 @@ export default function SavingsPage() {
                       </div>
                       <div className='text-right'>
                         <p className='font-semibold text-sm'>
-                          {formatCurrency(category.value)}
+                          {formatCurrencyDisplay(category.value)}
                         </p>
                         <p className='text-xs text-muted-foreground'>
                           {(

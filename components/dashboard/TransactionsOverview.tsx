@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AddTransactionForm } from "./AddTransactionForm";
 import {
@@ -63,6 +65,7 @@ interface TransactionsResponse {
 
 export function TransactionsOverview() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,11 +136,8 @@ export function TransactionsOverview() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(Math.abs(amount));
+  const formatCurrencyDisplay = (amount: number, accountCurrency?: string) => {
+    return formatCurrency(Math.abs(amount), accountCurrency || currency);
   };
 
   const formatDate = (dateString: string) => {
@@ -277,7 +277,7 @@ export function TransactionsOverview() {
                   <div>
                     <p className='text-xs text-muted-foreground'>Income</p>
                     <p className='text-sm font-semibold text-green-600 dark:text-green-400'>
-                      {formatCurrency(
+                      {formatCurrencyDisplay(
                         transactions
                           .filter((t) => t.amount > 0)
                           .reduce((sum, t) => sum + t.amount, 0)
@@ -292,7 +292,7 @@ export function TransactionsOverview() {
                   <div>
                     <p className='text-xs text-muted-foreground'>Expenses</p>
                     <p className='text-sm font-semibold text-red-600 dark:text-red-400'>
-                      {formatCurrency(
+                      {formatCurrencyDisplay(
                         transactions
                           .filter((t) => t.amount < 0)
                           .reduce((sum, t) => sum + Math.abs(t.amount), 0)
@@ -360,7 +360,7 @@ export function TransactionsOverview() {
                       }`}
                     >
                       {transaction.amount > 0 ? "+" : "-"}
-                      {formatCurrency(
+                      {formatCurrencyDisplay(
                         transaction.amount,
                         transaction.account.currency
                       )}

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ManageAccountTypes } from "@/components/dashboard/ManageAccountTypes";
 import { ManageTransactionCategories } from "@/components/dashboard/ManageTransactionCategories";
@@ -45,6 +46,7 @@ interface UserPreferences {
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
+  const { currency, setCurrency } = useCurrency();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -83,14 +85,14 @@ export default function SettingsPage() {
       setPreferences(defaultPrefs);
       setProfileData((prev) => ({
         ...prev,
-        currency: defaultPrefs.currency,
+        currency: currency, // Use currency from context
       }));
     } catch (error) {
       console.log("[v0] No user preferences found, using defaults:", error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, currency]);
 
   useEffect(() => {
     if (user) {
@@ -104,6 +106,9 @@ export default function SettingsPage() {
     try {
       setSaving(true);
       console.log("[v0] Saving profile data:", profileData);
+
+      // Update currency preference in context
+      setCurrency(profileData.currency);
 
       // In a real app, you would update the user profile via your auth provider
       // For now, we'll just show a success message

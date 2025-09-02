@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -49,6 +51,7 @@ export function SavingsGoals({
   onAddContribution,
 }: SavingsGoalsProps) {
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [addingContribution, setAddingContribution] = useState<string | null>(
     null
@@ -113,11 +116,8 @@ export function SavingsGoals({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  const formatCurrencyDisplay = (amount: number) => {
+    return formatCurrency(amount, currency);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -255,7 +255,7 @@ export function SavingsGoals({
                     />
                   ) : (
                     <span className='font-semibold ml-1'>
-                      {formatCurrency(goal.targetAmount)}
+                      {formatCurrencyDisplay(goal.targetAmount)}
                     </span>
                   )}
                 </CardDescription>
@@ -272,8 +272,8 @@ export function SavingsGoals({
                     </div>
                     <Progress value={progress} className='h-2' />
                     <div className='flex justify-between text-sm text-muted-foreground'>
-                      <span>{formatCurrency(goal.currentAmount)}</span>
-                      <span>{formatCurrency(goal.targetAmount)}</span>
+                      <span>{formatCurrencyDisplay(goal.currentAmount)}</span>
+                      <span>{formatCurrencyDisplay(goal.targetAmount)}</span>
                     </div>
                   </div>
 
@@ -297,7 +297,7 @@ export function SavingsGoals({
                             className='w-24 h-6 text-xs'
                           />
                         ) : (
-                          formatCurrency(goal.monthlyContribution)
+                          formatCurrencyDisplay(goal.monthlyContribution)
                         )}
                       </span>
                     </div>

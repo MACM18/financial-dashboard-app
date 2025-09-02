@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { AddAccountForm } from "./AddAccountForm";
 import { EditAccountForm } from "./EditAccountForm";
@@ -57,6 +59,7 @@ const AccountIcons = {
 
 export function AccountsOverview() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,11 +96,9 @@ export function AccountsOverview() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(amount);
+  const formatCurrencyDisplay = (amount: number, accountCurrency?: string) => {
+    // Use account-specific currency if provided, otherwise use user's default currency
+    return formatCurrency(amount, accountCurrency || currency);
   };
 
   const getTotalBalance = () => {
@@ -229,7 +230,7 @@ export function AccountsOverview() {
               <div className='text-center'>
                 <p className='text-sm text-muted-foreground'>Total Balance</p>
                 <p className='text-xl font-bold text-blue-800 dark:text-blue-200'>
-                  {formatCurrency(getTotalBalance())}
+                  {formatCurrencyDisplay(getTotalBalance())}
                 </p>
                 <p className='text-xs text-muted-foreground'>
                   Across {accounts.length} account
@@ -272,7 +273,7 @@ export function AccountsOverview() {
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {formatCurrency(account.balance, account.currency)}
+                        {formatCurrencyDisplay(account.balance, account.currency)}
                       </p>
                       <p className='text-xs text-muted-foreground'>
                         {new Date(account.createdAt).toLocaleDateString()}
