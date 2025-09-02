@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { ManageAccountTypes } from "./ManageAccountTypes";
 import {
   CreditCard,
   Wallet,
@@ -21,6 +22,7 @@ import {
   TrendingUp,
   Coins,
   MoreHorizontal,
+  Settings,
 } from "lucide-react";
 
 interface AccountType {
@@ -55,6 +57,7 @@ export function AddAccountForm({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAccountTypesManager, setShowAccountTypesManager] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -96,7 +99,11 @@ export function AddAccountForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.accountTypeName) {
+    // Trim whitespace from inputs
+    const trimmedName = formData.name.trim();
+    const trimmedAccountType = formData.accountTypeName.trim();
+
+    if (!trimmedName || !trimmedAccountType) {
       setError("Please fill in all required fields");
       return;
     }
@@ -113,8 +120,8 @@ export function AddAccountForm({
         },
         body: JSON.stringify({
           name: formData.name,
-          accountTypeName: formData.accountTypeName,
-          initialBalance: parseFloat(formData.initialBalance) || 0,
+          accountType: formData.accountTypeName, // Fixed: API expects 'accountType'
+          balance: parseFloat(formData.initialBalance) || 0,
           description: formData.description,
         }),
       });
@@ -193,7 +200,15 @@ export function AddAccountForm({
             )}
 
             <div className='space-y-2'>
-              <Label htmlFor='name'>Account Name *</Label>
+              <Label htmlFor='name' className='flex items-center gap-1'>
+                Account Name
+                <span className='text-red-500'>*</span>
+                {!formData.name && (
+                  <span className='text-xs text-red-500 ml-2 animate-pulse'>
+                    Required
+                  </span>
+                )}
+              </Label>
               <Input
                 id='name'
                 value={formData.name}
@@ -202,19 +217,64 @@ export function AddAccountForm({
                 }
                 placeholder='e.g., Main Checking Account'
                 required
+                className={`transition-all duration-200 ${
+                  !formData.name
+                    ? "border-red-300 dark:border-red-700 focus:border-red-500 dark:focus:border-red-400 bg-red-50/50 dark:bg-red-950/20"
+                    : formData.name.length > 0
+                    ? "border-green-300 dark:border-green-700 focus:border-green-500 dark:focus:border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                    : ""
+                }`}
               />
+              {!formData.name && (
+                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
+                  Please enter an account name
+                </p>
+              )}
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='accountType'>Account Type *</Label>
-              <div className='grid grid-cols-2 gap-2'>
+              <div className='flex items-center justify-between'>
+                <Label
+                  htmlFor='accountType'
+                  className='flex items-center gap-1'
+                >
+                  Account Type
+                  <span className='text-red-500'>*</span>
+                  {!formData.accountTypeName && (
+                    <span className='text-xs text-red-500 ml-2 animate-pulse'>
+                      Required
+                    </span>
+                  )}
+                </Label>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setShowAccountTypesManager(true)}
+                  className='h-6 w-6 p-0 text-muted-foreground hover:text-foreground'
+                  title='Manage Account Types'
+                >
+                  <Settings className='h-3 w-3' />
+                </Button>
+              </div>
+              <div
+                className={`grid grid-cols-2 gap-2 p-3 rounded-lg transition-all duration-200 ${
+                  !formData.accountTypeName
+                    ? "border-2 border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20"
+                    : "border-2 border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20"
+                }`}
+              >
                 {accountTypes.map((type) => (
                   <button
                     key={type.name}
                     type='button'
-                    onClick={() =>
-                      setFormData({ ...formData, accountTypeName: type.name })
-                    }
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        accountTypeName: type.name,
+                      });
+                    }}
                     className={`p-3 rounded-lg border-2 transition-all text-left ${
                       formData.accountTypeName === type.name
                         ? `ring-2 ring-blue-500 ${getAccountTypeColor(
@@ -237,10 +297,22 @@ export function AddAccountForm({
                   </button>
                 ))}
               </div>
+              {!formData.accountTypeName && (
+                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-2'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
+                  Please select an account type
+                </p>
+              )}
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='initialBalance'>Initial Balance</Label>
+              <Label
+                htmlFor='initialBalance'
+                className='flex items-center gap-1'
+              >
+                Initial Balance
+                <span className='text-xs text-gray-500 ml-2'>(Optional)</span>
+              </Label>
               <Input
                 id='initialBalance'
                 type='number'
@@ -251,6 +323,12 @@ export function AddAccountForm({
                   setFormData({ ...formData, initialBalance: e.target.value })
                 }
                 placeholder='0.00'
+                className={`transition-all duration-200 ${
+                  formData.initialBalance !== "" &&
+                  formData.initialBalance !== "0"
+                    ? "border-green-300 dark:border-green-700 focus:border-green-500 dark:focus:border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                    : ""
+                }`}
               />
               <p className='text-xs text-muted-foreground'>
                 Enter the current balance for this account
@@ -258,7 +336,10 @@ export function AddAccountForm({
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='description'>Description (Optional)</Label>
+              <Label htmlFor='description' className='flex items-center gap-1'>
+                Description
+                <span className='text-xs text-gray-500 ml-2'>(Optional)</span>
+              </Label>
               <Input
                 id='description'
                 value={formData.description}
@@ -266,6 +347,11 @@ export function AddAccountForm({
                   setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder='e.g., Primary checking account for daily expenses'
+                className={`transition-all duration-200 ${
+                  formData.description !== ""
+                    ? "border-green-300 dark:border-green-700 focus:border-green-500 dark:focus:border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                    : ""
+                }`}
               />
             </div>
 
@@ -275,29 +361,62 @@ export function AddAccountForm({
                 variant='outline'
                 onClick={() => onOpenChange(false)}
                 disabled={submitting}
+                className='transition-all duration-200'
               >
                 Cancel
               </Button>
-              <Button
-                type='submit'
-                disabled={
-                  submitting || !formData.name || !formData.accountTypeName
-                }
-                className='bg-blue-600 hover:bg-blue-700 text-white'
-              >
-                {submitting ? (
-                  <>
-                    <LoadingSpinner size='sm' className='mr-2' />
-                    Creating...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
+              <div className='relative'>
+                <Button
+                  type='submit'
+                  disabled={
+                    submitting ||
+                    !formData.name.trim() ||
+                    !formData.accountTypeName.trim()
+                  }
+                  className={`transition-all duration-200 ${
+                    submitting ||
+                    !formData.name.trim() ||
+                    !formData.accountTypeName.trim()
+                      ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-gray-200"
+                      : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 shadow-lg hover:shadow-xl"
+                  }`}
+                >
+                  {submitting ? (
+                    <>
+                      <LoadingSpinner size='sm' className='mr-2' />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
+                {(!formData.name.trim() || !formData.accountTypeName.trim()) &&
+                  !submitting && (
+                    <div className='absolute -bottom-6 right-0 text-xs text-red-600 dark:text-red-400 whitespace-nowrap'>
+                      {!formData.name.trim() && !formData.accountTypeName.trim()
+                        ? "Name and type required"
+                        : !formData.name.trim()
+                        ? "Account name required"
+                        : "Account type required"}
+                    </div>
+                  )}
+              </div>
             </div>
           </form>
         )}
       </DialogContent>
+
+      {/* Account Types Management Dialog */}
+      <ManageAccountTypes
+        open={showAccountTypesManager}
+        onOpenChange={(open) => {
+          setShowAccountTypesManager(open);
+          if (!open) {
+            // Refresh account types when the management dialog closes
+            fetchAccountTypes();
+          }
+        }}
+      />
     </Dialog>
   );
 }

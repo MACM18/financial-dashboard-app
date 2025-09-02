@@ -15,6 +15,8 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ManageAccountTypes } from "@/components/dashboard/ManageAccountTypes";
+import { ManageTransactionCategories } from "@/components/dashboard/ManageTransactionCategories";
 import {
   User,
   Bell,
@@ -26,6 +28,9 @@ import {
   Upload,
   Trash2,
   Settings as SettingsIcon,
+  Building2,
+  Tag,
+  CreditCard,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/dashboard/LoadingSpinner";
@@ -43,6 +48,8 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showAccountTypesManager, setShowAccountTypesManager] = useState(false);
+  const [showCategoriesManager, setShowCategoriesManager] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences>({
     currency: "USD",
     budgetAlerts: true,
@@ -532,6 +539,78 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Financial Configuration */}
+      <Card className='bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200/30 dark:border-emerald-800/30'>
+        <CardHeader>
+          <div className='flex items-center space-x-2'>
+            <CreditCard className='h-5 w-5 text-emerald-600 dark:text-emerald-400' />
+            <CardTitle className='text-emerald-800 dark:text-emerald-200'>
+              Financial Configuration
+            </CardTitle>
+          </div>
+          <CardDescription>
+            Manage account types and transaction categories for your financial
+            tracking.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <Button
+              onClick={() => setShowAccountTypesManager(true)}
+              className='bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 p-4 h-auto'
+            >
+              <Building2 className='h-5 w-5' />
+              <div className='text-left'>
+                <div className='font-medium'>Manage Account Types</div>
+                <div className='text-xs opacity-90'>
+                  Add, edit, or remove account types
+                </div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => setShowCategoriesManager(true)}
+              variant='outline'
+              className='bg-white/60 dark:bg-gray-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 flex items-center justify-center gap-2 p-4 h-auto'
+            >
+              <Tag className='h-5 w-5 text-emerald-600 dark:text-emerald-400' />
+              <div className='text-left'>
+                <div className='font-medium text-emerald-800 dark:text-emerald-200'>
+                  Manage Categories
+                </div>
+                <div className='text-xs text-emerald-600 dark:text-emerald-400'>
+                  Add, edit, or remove transaction categories
+                </div>
+              </div>
+            </Button>
+          </div>
+          <div className='text-sm text-muted-foreground bg-white/40 dark:bg-gray-800/20 p-3 rounded-lg'>
+            <p className='font-medium mb-1'>Configuration Tips:</p>
+            <ul className='text-xs space-y-1'>
+              <li>
+                • Account types define the kinds of financial accounts you can
+                create
+              </li>
+              <li>
+                • Categories help organize your income and expense transactions
+              </li>
+              <li>
+                • Changes will be reflected immediately in forms and reports
+              </li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Management Dialogs */}
+      <ManageAccountTypes
+        open={showAccountTypesManager}
+        onOpenChange={setShowAccountTypesManager}
+      />
+      <ManageTransactionCategories
+        open={showCategoriesManager}
+        onOpenChange={setShowCategoriesManager}
+      />
     </div>
   );
 }

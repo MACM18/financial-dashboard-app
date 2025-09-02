@@ -14,11 +14,13 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
+import { ManageTransactionCategories } from "./ManageTransactionCategories";
 import {
   CreditCard,
   ArrowUpCircle,
   ArrowDownCircle,
   CalendarDays,
+  Settings,
 } from "lucide-react";
 
 interface Account {
@@ -59,6 +61,7 @@ export function AddTransactionForm({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCategoriesManager, setShowCategoriesManager] = useState(false);
   const [transactionType, setTransactionType] = useState<"income" | "expense">(
     "expense"
   );
@@ -267,14 +270,26 @@ export function AddTransactionForm({
 
             {/* Account Selection */}
             <div className='space-y-2'>
-              <Label htmlFor='accountId'>Account *</Label>
+              <Label htmlFor='accountId' className='flex items-center gap-1'>
+                Account
+                <span className='text-red-500'>*</span>
+                {!formData.accountId && (
+                  <span className='text-xs text-red-500 ml-2 animate-pulse'>
+                    Required
+                  </span>
+                )}
+              </Label>
               <select
                 id='accountId'
                 value={formData.accountId}
                 onChange={(e) =>
                   setFormData({ ...formData, accountId: e.target.value })
                 }
-                className='w-full p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                className={`w-full p-3 rounded-lg border transition-all duration-200 bg-white dark:bg-gray-800 ${
+                  !formData.accountId
+                    ? "border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20"
+                    : "border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20"
+                }`}
                 required
               >
                 <option value=''>Select an account...</option>
@@ -288,12 +303,44 @@ export function AddTransactionForm({
                   </option>
                 ))}
               </select>
+              {!formData.accountId && (
+                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
+                  Please select an account for this transaction
+                </p>
+              )}
             </div>
 
             {/* Category Selection */}
             <div className='space-y-2'>
-              <Label>Category *</Label>
-              <div className='grid grid-cols-2 gap-2 max-h-32 overflow-y-auto'>
+              <div className='flex items-center justify-between'>
+                <Label className='flex items-center gap-1'>
+                  Category
+                  <span className='text-red-500'>*</span>
+                  {!formData.categoryName && (
+                    <span className='text-xs text-red-500 ml-2 animate-pulse'>
+                      Required
+                    </span>
+                  )}
+                </Label>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => setShowCategoriesManager(true)}
+                  className='h-6 w-6 p-0 text-muted-foreground hover:text-foreground'
+                  title='Manage Categories'
+                >
+                  <Settings className='h-3 w-3' />
+                </Button>
+              </div>
+              <div
+                className={`grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-3 rounded-lg border-2 transition-all duration-200 ${
+                  !formData.categoryName
+                    ? "border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20"
+                    : "border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20"
+                }`}
+              >
                 {filteredCategories.map((category) => (
                   <button
                     key={category.id}
@@ -320,11 +367,25 @@ export function AddTransactionForm({
                   </button>
                 ))}
               </div>
+              {!formData.categoryName && (
+                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
+                  Please select a category for this transaction
+                </p>
+              )}
             </div>
 
             {/* Amount */}
             <div className='space-y-2'>
-              <Label htmlFor='amount'>Amount *</Label>
+              <Label htmlFor='amount' className='flex items-center gap-1'>
+                Amount
+                <span className='text-red-500'>*</span>
+                {!formData.amount && (
+                  <span className='text-xs text-red-500 ml-2 animate-pulse'>
+                    Required
+                  </span>
+                )}
+              </Label>
               <div className='relative'>
                 <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground'>
                   {selectedAccount?.currency === "USD"
@@ -341,15 +402,35 @@ export function AddTransactionForm({
                     setFormData({ ...formData, amount: e.target.value })
                   }
                   placeholder='0.00'
-                  className='pl-8'
+                  className={`pl-8 transition-all duration-200 ${
+                    !formData.amount
+                      ? "border-red-300 dark:border-red-700 focus:border-red-500 dark:focus:border-red-400 bg-red-50/50 dark:bg-red-950/20"
+                      : formData.amount && parseFloat(formData.amount) > 0
+                      ? "border-green-300 dark:border-green-700 focus:border-green-500 dark:focus:border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                      : ""
+                  }`}
                   required
                 />
               </div>
+              {!formData.amount && (
+                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
+                  Please enter a transaction amount
+                </p>
+              )}
             </div>
 
             {/* Description */}
             <div className='space-y-2'>
-              <Label htmlFor='description'>Description *</Label>
+              <Label htmlFor='description' className='flex items-center gap-1'>
+                Description
+                <span className='text-red-500'>*</span>
+                {!formData.description && (
+                  <span className='text-xs text-red-500 ml-2 animate-pulse'>
+                    Required
+                  </span>
+                )}
+              </Label>
               <Input
                 id='description'
                 value={formData.description}
@@ -361,8 +442,21 @@ export function AddTransactionForm({
                     ? "e.g., Salary payment"
                     : "e.g., Grocery shopping"
                 }
+                className={`transition-all duration-200 ${
+                  !formData.description
+                    ? "border-red-300 dark:border-red-700 focus:border-red-500 dark:focus:border-red-400 bg-red-50/50 dark:bg-red-950/20"
+                    : formData.description.length > 0
+                    ? "border-green-300 dark:border-green-700 focus:border-green-500 dark:focus:border-green-400 bg-green-50/50 dark:bg-green-950/20"
+                    : ""
+                }`}
                 required
               />
+              {!formData.description && (
+                <p className='text-xs text-red-600 dark:text-red-400 flex items-center gap-1'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full'></span>
+                  Please add a description for this transaction
+                </p>
+              )}
             </div>
 
             {/* Date */}
@@ -398,9 +492,30 @@ export function AddTransactionForm({
                 variant='outline'
                 onClick={() => onOpenChange(false)}
                 disabled={submitting}
+                className='transition-all duration-200 hover:scale-105'
               >
                 Cancel
               </Button>
+
+              {/* Validation Status */}
+              {(!formData.accountId ||
+                !formData.categoryName ||
+                !formData.amount ||
+                !formData.description) && (
+                <div className='flex items-center text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-md'>
+                  <span className='w-1 h-1 bg-red-500 rounded-full mr-2'></span>
+                  {!formData.accountId
+                    ? "Select account"
+                    : !formData.categoryName
+                    ? "Select category"
+                    : !formData.amount
+                    ? "Enter amount"
+                    : !formData.description
+                    ? "Add description"
+                    : ""}
+                </div>
+              )}
+
               <Button
                 type='submit'
                 disabled={
@@ -410,10 +525,16 @@ export function AddTransactionForm({
                   !formData.amount ||
                   !formData.description
                 }
-                className={`text-white ${
-                  transactionType === "income"
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-red-600 hover:bg-red-700"
+                className={`text-white transition-all duration-200 ${
+                  submitting ||
+                  !formData.accountId ||
+                  !formData.categoryName ||
+                  !formData.amount ||
+                  !formData.description
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : transactionType === "income"
+                    ? "bg-green-600 hover:bg-green-700 hover:scale-105 shadow-lg"
+                    : "bg-red-600 hover:bg-red-700 hover:scale-105 shadow-lg"
                 }`}
               >
                 {submitting ? (
@@ -429,6 +550,18 @@ export function AddTransactionForm({
           </form>
         )}
       </DialogContent>
+
+      {/* Categories Management Dialog */}
+      <ManageTransactionCategories
+        open={showCategoriesManager}
+        onOpenChange={(open) => {
+          setShowCategoriesManager(open);
+          if (!open) {
+            // Refresh categories when the management dialog closes
+            fetchData();
+          }
+        }}
+      />
     </Dialog>
   );
 }

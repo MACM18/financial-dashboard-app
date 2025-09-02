@@ -10,6 +10,8 @@ import { AccountsOverview } from "@/components/dashboard/AccountsOverview";
 import { TransactionsOverview } from "@/components/dashboard/TransactionsOverview";
 import { SpendingAnalytics } from "@/components/dashboard/SpendingAnalytics";
 import { AccountBalanceTrend } from "@/components/dashboard/AccountBalanceTrend";
+import { ManageAccountTypes } from "@/components/dashboard/ManageAccountTypes";
+import { ManageTransactionCategories } from "@/components/dashboard/ManageTransactionCategories";
 import {
   Card,
   CardContent,
@@ -24,12 +26,17 @@ import {
   CreditCard,
   Sparkles,
   BarChart3,
+  Building2,
+  Tag,
+  Settings,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [debugInfo, setDebugInfo] = useState("");
+  const [showAccountTypesManager, setShowAccountTypesManager] = useState(false);
+  const [showCategoriesManager, setShowCategoriesManager] = useState(false);
 
   console.log("[v0] Dashboard page rendering");
 
@@ -51,6 +58,15 @@ export default function DashboardPage() {
         break;
       case "analytics":
         router.push("/dashboard/analytics");
+        break;
+      case "account-types":
+        setShowAccountTypesManager(true);
+        break;
+      case "categories":
+        setShowCategoriesManager(true);
+        break;
+      case "settings":
+        router.push("/dashboard/settings");
         break;
       default:
         console.log("[v0] Unknown action:", action);
@@ -157,6 +173,53 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </Button>
+
+              <div className='border-t border-blue-200/30 dark:border-blue-800/30 my-2'></div>
+
+              <Button
+                variant='ghost'
+                size='sm'
+                className='w-full justify-start p-3 h-auto bg-white/60 dark:bg-gray-800/30 border border-blue-200/30 dark:border-blue-800/30 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-200'
+                onClick={() => handleQuickAction("account-types")}
+              >
+                <Building2 className='h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400' />
+                <div className='text-left'>
+                  <p className='font-medium text-sm'>Account Types</p>
+                  <p className='text-xs text-muted-foreground'>
+                    Manage account types
+                  </p>
+                </div>
+              </Button>
+
+              <Button
+                variant='ghost'
+                size='sm'
+                className='w-full justify-start p-3 h-auto bg-white/60 dark:bg-gray-800/30 border border-blue-200/30 dark:border-blue-800/30 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-200'
+                onClick={() => handleQuickAction("categories")}
+              >
+                <Tag className='h-4 w-4 mr-2 text-teal-600 dark:text-teal-400' />
+                <div className='text-left'>
+                  <p className='font-medium text-sm'>Categories</p>
+                  <p className='text-xs text-muted-foreground'>
+                    Manage transaction categories
+                  </p>
+                </div>
+              </Button>
+
+              <Button
+                variant='ghost'
+                size='sm'
+                className='w-full justify-start p-3 h-auto bg-white/60 dark:bg-gray-800/30 border border-blue-200/30 dark:border-blue-800/30 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-200'
+                onClick={() => handleQuickAction("settings")}
+              >
+                <Settings className='h-4 w-4 mr-2 text-gray-600 dark:text-gray-400' />
+                <div className='text-left'>
+                  <p className='font-medium text-sm'>Settings</p>
+                  <p className='text-xs text-muted-foreground'>
+                    Account & app settings
+                  </p>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -199,6 +262,16 @@ export default function DashboardPage() {
           </div>
         </div>
       </details>
+
+      {/* Management Dialogs */}
+      <ManageAccountTypes
+        open={showAccountTypesManager}
+        onOpenChange={setShowAccountTypesManager}
+      />
+      <ManageTransactionCategories
+        open={showCategoriesManager}
+        onOpenChange={setShowCategoriesManager}
+      />
     </div>
   );
 }
