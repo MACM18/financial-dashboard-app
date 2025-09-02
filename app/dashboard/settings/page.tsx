@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -65,13 +65,7 @@ export default function SettingsPage() {
 
   console.log("[v0] Settings page rendering, user:", user?.id);
 
-  useEffect(() => {
-    if (user) {
-      loadUserPreferences();
-    }
-  }, [user]);
-
-  const loadUserPreferences = async () => {
+  const loadUserPreferences = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -96,7 +90,13 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadUserPreferences();
+    }
+  }, [user, loadUserPreferences]);
 
   const saveProfile = async () => {
     if (!user) return;

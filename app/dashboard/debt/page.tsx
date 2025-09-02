@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DebtTracker } from "@/components/dashboard/DebtTracker";
 import { Button } from "@/components/ui/button";
@@ -46,13 +46,12 @@ import { useToast } from "@/hooks/use-toast";
 interface Debt {
   id: string;
   name: string;
-  originalAmount: number;
   totalAmount: number;
   currentBalance: number;
   monthlyPayment: number;
   interestRate: number;
   minimumPayment: number;
-  dueDate: string;
+  dueDate: string | null;
   debtType: string;
   isPaidOff: boolean;
 }
@@ -115,13 +114,7 @@ export default function DebtPage() {
     debtType: "Credit Card",
   });
 
-  useEffect(() => {
-    if (user) {
-      loadDebtData();
-    }
-  }, [user]);
-
-  const loadDebtData = async () => {
+  const loadDebtData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -156,7 +149,13 @@ export default function DebtPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      loadDebtData();
+    }
+  }, [user, loadDebtData]);
 
   const calculateDebtAnalytics = (debtsList: Debt[]): DebtAnalytics => {
     const totalDebt = debtsList.reduce(
@@ -164,7 +163,7 @@ export default function DebtPage() {
       0
     );
     const totalOriginalDebt = debtsList.reduce(
-      (sum, d) => sum + Number(d.originalAmount || d.totalAmount),
+      (sum, d) => sum + Number(d.totalAmount),
       0
     );
     const totalPaid = totalOriginalDebt - totalDebt;
@@ -227,6 +226,7 @@ export default function DebtPage() {
     // Check for overdue debts
     const today = new Date();
     const debtsOverdue = debtsList.filter((debt) => {
+      if (!debt.dueDate) return false;
       const dueDate = new Date(debt.dueDate);
       return dueDate < today && !debt.isPaidOff;
     }).length;
@@ -326,46 +326,69 @@ export default function DebtPage() {
     }
   };
 
-  const getDebtProgress = (debt: Debt) => {
-    const originalAmount = debt.originalAmount || debt.totalAmount;
-    if (originalAmount === 0) return 0;
-    const paidAmount = originalAmount - debt.currentBalance;
-    return Math.min((paidAmount / originalAmount) * 100, 100);
+  const handleUpdateDebt = async (debt: Partial<Debt> & { id: string }) => {
+    if (!user) return;
+    try {
+      const response = await fetch("/api/debts", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.id}`,
+        },
+        body: JSON.stringify(debt),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update debt");
+      }
+      await loadDebtData();
+    } catch (error) {
+      console.error("Error updating debt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update debt. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const getDebtUrgency = (debt: Debt) => {
-    const dueDate = new Date(debt.dueDate);
-    const today = new Date();
-    const daysUntilDue = Math.ceil(
-      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    );
+  const handleDeleteDebt = async (debtId: string) => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/debts?id=${debtId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user.id}`,
+        },
+      });
 
-    if (daysUntilDue < 0)
-      return { status: "overdue", color: "red", label: "Overdue" };
-    if (daysUntilDue <= 7)
-      return { status: "urgent", color: "orange", label: "Due Soon" };
-    if (daysUntilDue <= 30)
-      return { status: "warning", color: "yellow", label: "Upcoming" };
-    return { status: "normal", color: "green", label: "On Track" };
+      if (!response.ok) {
+        throw new Error("Failed to delete debt");
+      }
+      await loadDebtData();
+    } catch (error) {
+      console.error("Error deleting debt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete debt. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const calculatePayoffTime = (debt: Debt) => {
-    if (debt.monthlyPayment <= 0 || debt.currentBalance <= 0) return "N/A";
+  const handleMakePayment = async (debtId: string, amount: number) => {
+    if (!user) return;
+    const debt = debts.find((d) => d.id === debtId);
+    if (!debt) return;
 
-    const monthlyRate = debt.interestRate / 12 / 100;
-    if (monthlyRate === 0) {
-      return Math.ceil(debt.currentBalance / debt.monthlyPayment) + " months";
-    }
+    const newCurrentBalance = Math.max(0, debt.currentBalance - amount);
+    const isPaidOff = newCurrentBalance === 0;
 
-    const months = Math.ceil(
-      -Math.log(1 - (debt.currentBalance * monthlyRate) / debt.monthlyPayment) /
-        Math.log(1 + monthlyRate)
-    );
-
-    if (months > 12) {
-      return Math.ceil(months / 12) + " years";
-    }
-    return months + " months";
+    await handleUpdateDebt({
+      id: debtId,
+      currentBalance: newCurrentBalance,
+      isPaidOff,
+    });
   };
 
   if (loading) {
@@ -795,129 +818,12 @@ export default function DebtPage() {
       )}
 
       {/* Individual Debt Cards */}
-      {debts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <BarChart3 className='h-5 w-5' />
-              Your Debts
-            </CardTitle>
-            <CardDescription>
-              Individual debt tracking with payoff projections and payment
-              status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-              {debts.map((debt) => {
-                const progress = getDebtProgress(debt);
-                const urgency = getDebtUrgency(debt);
-                const payoffTime = calculatePayoffTime(debt);
-                const typeInfo =
-                  DEBT_TYPES.find((t) => t.value === debt.debtType) ||
-                  DEBT_TYPES[DEBT_TYPES.length - 1];
-
-                return (
-                  <div
-                    key={debt.id}
-                    className='p-4 rounded-lg border bg-muted/50 space-y-4'
-                  >
-                    <div className='flex items-start justify-between'>
-                      <div>
-                        <h3 className='font-semibold text-lg'>{debt.name}</h3>
-                        <div className='flex items-center gap-2 mt-1'>
-                          <div
-                            className={`w-3 h-3 rounded-full ${typeInfo.color}`}
-                          />
-                          <span className='text-sm text-muted-foreground'>
-                            {debt.debtType}
-                          </span>
-                          <Badge
-                            variant='outline'
-                            className={`text-xs ${
-                              urgency.color === "red"
-                                ? "border-red-500 text-red-600"
-                                : urgency.color === "orange"
-                                ? "border-orange-500 text-orange-600"
-                                : urgency.color === "yellow"
-                                ? "border-yellow-500 text-yellow-600"
-                                : "border-green-500 text-green-600"
-                            }`}
-                          >
-                            {urgency.label}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className='text-right'>
-                        <div className='text-lg font-bold text-red-600 dark:text-red-400'>
-                          {showSensitiveData
-                            ? `$${debt.currentBalance.toFixed(2)}`
-                            : "***"}
-                        </div>
-                        <div className='text-xs text-muted-foreground'>
-                          {debt.interestRate.toFixed(1)}% APR
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className='space-y-2'>
-                      <div className='flex items-center justify-between text-sm'>
-                        <span className='text-muted-foreground'>
-                          Payoff Progress
-                        </span>
-                        <span className='font-medium'>
-                          {progress.toFixed(1)}%
-                        </span>
-                      </div>
-                      <Progress value={progress} className='h-2' />
-                    </div>
-
-                    <div className='grid grid-cols-2 gap-4 text-sm'>
-                      <div>
-                        <span className='text-muted-foreground'>
-                          Monthly Payment
-                        </span>
-                        <p className='font-semibold text-blue-600 dark:text-blue-400'>
-                          {showSensitiveData
-                            ? `$${debt.monthlyPayment.toFixed(2)}`
-                            : "***"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className='text-muted-foreground'>
-                          Payoff Time
-                        </span>
-                        <p className='font-semibold text-green-600 dark:text-green-400'>
-                          {payoffTime}
-                        </p>
-                      </div>
-                      <div>
-                        <span className='text-muted-foreground'>Next Due</span>
-                        <p className='font-semibold'>
-                          {new Date(debt.dueDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <span className='text-muted-foreground'>
-                          Minimum Payment
-                        </span>
-                        <p className='font-semibold'>
-                          {showSensitiveData
-                            ? `$${debt.minimumPayment.toFixed(2)}`
-                            : "***"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Debt Tracker Component */}
-      <DebtTracker />
+      <DebtTracker
+        debts={debts}
+        onUpdateDebt={handleUpdateDebt}
+        onDeleteDebt={handleDeleteDebt}
+        onMakePayment={handleMakePayment}
+      />
     </div>
   );
 }

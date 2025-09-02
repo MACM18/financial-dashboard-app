@@ -88,7 +88,7 @@ export default function DashboardPage() {
                 </h1>
               </div>
               <p className='text-muted-foreground'>
-                Welcome back! Here's your financial overview.
+                Welcome back! Here&apos;s your financial overview.
               </p>
             </div>
             <Button
@@ -253,12 +253,28 @@ export default function DashboardPage() {
 
         <div className='mt-4 space-y-6'>
           {/* Budget Tracker */}
-          <BudgetTracker />
+          <BudgetTracker
+            budgets={[]} // TODO: Replace with actual budgets data from API or state
+            onUpdateBudget={() => {}} // TODO: Implement update logic
+            onSaveBudget={() => {}} // TODO: Implement save logic
+            onDeleteBudget={() => {}} // TODO: Implement delete logic
+            onAddBudgetRow={() => {}} // TODO: Implement add row logic
+          />
 
           {/* Savings and Debt */}
           <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-            <SavingsGoals />
-            <DebtTracker />
+            <SavingsGoals
+              goals={[]} // TODO: Replace with actual savings goals data from API or state
+              onUpdateGoal={async (_goal) => {}} // TODO: Implement update logic
+              onDeleteGoal={async (_goalId) => {}} // TODO: Implement delete logic
+              onAddContribution={async (_goalId, _amount) => {}} // TODO: Implement add contribution logic
+            />
+            <DebtTracker
+              debts={[]} // TODO: Replace with actual debts data from API or state
+              onUpdateDebt={async (_debt) => {}} // TODO: Implement update logic
+              onDeleteDebt={async (_debtId: string) => {}} // TODO: Implement delete logic
+              onMakePayment={async (_debtId: string, _amount: number) => {}} // TODO: Implement make payment logic
+            />
           </div>
         </div>
       </details>

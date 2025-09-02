@@ -78,7 +78,7 @@ interface SavingsGoal {
   currentAmount: number;
   monthlyContribution: number;
   category: string;
-  targetDate?: string;
+  targetDate: string | null;
   isCompleted: boolean;
 }
 
@@ -268,6 +268,73 @@ export default function SavingsPage() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleUpdateGoal = async (
+    goal: Partial<SavingsGoal> & { id: string }
+  ) => {
+    if (!user) return;
+    try {
+      const response = await fetch("/api/savings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.id}`,
+        },
+        body: JSON.stringify(goal),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update savings goal");
+      }
+      await loadSavingsGoals();
+    } catch (error) {
+      console.error("Error updating savings goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update savings goal. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteGoal = async (goalId: string) => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/savings?id=${goalId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user.id}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete savings goal");
+      }
+      await loadSavingsGoals();
+    } catch (error) {
+      console.error("Error deleting savings goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete savings goal. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddContribution = async (goalId: string, amount: number) => {
+    if (!user) return;
+    const goal = savingsGoals.find((g) => g.id === goalId);
+    if (!goal) return;
+
+    const newCurrentAmount = goal.currentAmount + amount;
+    const isCompleted = newCurrentAmount >= goal.targetAmount;
+
+    await handleUpdateGoal({
+      id: goalId,
+      currentAmount: newCurrentAmount,
+      isCompleted,
+    });
   };
 
   // Enhanced Analytics Calculations
@@ -1077,7 +1144,12 @@ export default function SavingsPage() {
       )}
 
       {/* Enhanced Savings Goals Component */}
-      <SavingsGoals />
+      <SavingsGoals
+        goals={savingsGoals}
+        onUpdateGoal={handleUpdateGoal}
+        onDeleteGoal={handleDeleteGoal}
+        onAddContribution={handleAddContribution}
+      />
     </div>
   );
 }

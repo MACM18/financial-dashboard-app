@@ -139,7 +139,7 @@ export function LoginForm() {
 
             <div className='text-center'>
               <p className='text-sm text-muted-foreground'>
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <a
                   href='/register'
                   className='font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors'
