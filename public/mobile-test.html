@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Layout Test - Financial Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="space-y-6">
+        <!-- Welcome Header - BEFORE FIX (Original layout) -->
+        <div class="bg-white rounded-lg p-4 border">
+            <h3 class="text-lg font-semibold mb-4 text-red-600">BEFORE: Original Layout (Mobile Issues)</h3>
+            <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 border">
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="h-6 w-6 bg-indigo-600 rounded"></span>
+                                <h1 class="text-2xl font-bold">Financial Dashboard</h1>
+                            </div>
+                            <p class="text-gray-600">Welcome back! Here's your financial overview.</p>
+                        </div>
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
+                            View Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Header - AFTER FIX (Mobile-responsive layout) -->
+        <div class="bg-white rounded-lg p-4 border">
+            <h3 class="text-lg font-semibold mb-4 text-green-600">AFTER: Fixed Layout (Mobile Responsive)</h3>
+            <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 border">
+                <div class="relative z-10">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="h-6 w-6 bg-indigo-600 rounded"></span>
+                                <h1 class="text-2xl font-bold">Financial Dashboard</h1>
+                            </div>
+                            <p class="text-gray-600">Welcome back! Here's your financial overview.</p>
+                        </div>
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded w-full sm:w-auto">
+                            View Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Overview - BEFORE FIX -->
+        <div class="bg-white rounded-lg p-4 border">
+            <h3 class="text-lg font-semibold mb-4 text-red-600">BEFORE: Account Card Header (Mobile Issues)</h3>
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border rounded-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-blue-800 text-lg font-semibold">Accounts Overview</h2>
+                        <p class="text-gray-600 text-sm">Manage your bank accounts, cards, and wallets</p>
+                    </div>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                        Add Account
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Overview - AFTER FIX -->
+        <div class="bg-white rounded-lg p-4 border">
+            <h3 class="text-lg font-semibold mb-4 text-green-600">AFTER: Account Card Header (Mobile Responsive)</h3>
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border rounded-lg p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-blue-800 text-lg font-semibold">Accounts Overview</h2>
+                        <p class="text-gray-600 text-sm">Manage your bank accounts, cards, and wallets</p>
+                    </div>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm w-full sm:w-auto">
+                        Add Account
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Info -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2">Mobile Layout Fixes Applied:</h3>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+                <li><code>flex-col sm:flex-row</code> - Stack vertically on mobile, horizontal on larger screens</li>
+                <li><code>gap-4</code> - Consistent spacing between elements</li>
+                <li><code>w-full sm:w-auto</code> - Full width buttons on mobile, auto width on larger screens</li>
+                <li><code>sm:items-center sm:justify-between</code> - Proper alignment on larger screens</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Show current viewport width for testing
+        function showViewportWidth() {
+            const width = window.innerWidth;
+            const indicator = document.getElementById('viewport-indicator') || document.createElement('div');
+            indicator.id = 'viewport-indicator';
+            indicator.className = 'fixed top-4 right-4 bg-black text-white px-3 py-1 rounded text-sm z-50';
+            indicator.textContent = `${width}px`;
+            if (!document.getElementById('viewport-indicator')) {
+                document.body.appendChild(indicator);
+            }
+        }
+        
+        showViewportWidth();
+        window.addEventListener('resize', showViewportWidth);
+    </script>
+</body>
+</html>
