@@ -186,7 +186,7 @@ export default function BudgetPage() {
           <div>
             <div className='flex items-center gap-3 mb-2'>
               <TrendingUp className='h-8 w-8 text-indigo-600 dark:text-indigo-400' />
-              <h1 className='text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+              <h1 className='text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
                 Budget Tracker
               </h1>
             </div>
@@ -338,7 +338,7 @@ export default function BudgetPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-green-600 dark:text-green-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400'>
               ${totalBudgeted.toFixed(2)}
             </div>
             <p className='text-sm text-green-700/70 dark:text-green-300/70'>
@@ -358,7 +358,7 @@ export default function BudgetPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-blue-600 dark:text-blue-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400'>
               ${totalActual.toFixed(2)}
             </div>
             <p className='text-sm text-blue-700/70 dark:text-blue-300/70'>
@@ -387,7 +387,7 @@ export default function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div
-              className={`text-3xl font-bold ${
+              className={`text-2xl sm:text-3xl font-bold ${
                 remainingBudget >= 0
                   ? "text-purple-600 dark:text-purple-400"
                   : "text-red-600 dark:text-red-400"

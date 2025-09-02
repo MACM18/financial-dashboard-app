@@ -83,7 +83,7 @@ export default function DashboardPage() {
             <div>
               <div className='flex items-center gap-3 mb-2'>
                 <Sparkles className='h-6 w-6 text-indigo-600 dark:text-indigo-400' />
-                <h1 className='text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+                <h1 className='text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
                   Financial Dashboard
                 </h1>
               </div>

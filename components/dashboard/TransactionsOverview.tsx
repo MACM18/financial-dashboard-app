@@ -221,7 +221,7 @@ export function TransactionsOverview() {
   return (
     <Card className='bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200/50 dark:border-purple-800/50'>
       <CardHeader>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
             <CardTitle className='text-purple-800 dark:text-purple-200'>
               Recent Transactions
@@ -230,11 +230,11 @@ export function TransactionsOverview() {
               Track your income and expenses across all accounts
             </CardDescription>
           </div>
-          <div className='flex space-x-2'>
+          <div className='flex flex-col sm:flex-row gap-2'>
             <Button
               variant='outline'
               size='sm'
-              className='text-purple-700 border-purple-300 hover:bg-purple-50 dark:text-purple-300 dark:border-purple-700 dark:hover:bg-purple-950/50'
+              className='text-purple-700 border-purple-300 hover:bg-purple-50 dark:text-purple-300 dark:border-purple-700 dark:hover:bg-purple-950/50 w-full sm:w-auto'
             >
               <Filter className='h-4 w-4 mr-2' />
               Filter
@@ -242,7 +242,7 @@ export function TransactionsOverview() {
             <Button
               onClick={() => setShowAddForm(true)}
               size='sm'
-              className='bg-purple-600 hover:bg-purple-700 text-white'
+              className='bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto'
             >
               <Plus className='h-4 w-4 mr-2' />
               Add Transaction

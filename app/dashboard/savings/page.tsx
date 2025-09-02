@@ -182,7 +182,7 @@ export default function SavingsPage() {
           <div>
             <div className='flex items-center gap-3 mb-2'>
               <Target className='h-8 w-8 text-emerald-600 dark:text-emerald-400' />
-              <h1 className='text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+              <h1 className='text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
                 Savings Goals
               </h1>
             </div>
@@ -355,7 +355,7 @@ export default function SavingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-green-600 dark:text-green-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400'>
               ${totalCurrentAmount.toFixed(2)}
             </div>
             <p className='text-sm text-green-700/70 dark:text-green-300/70'>
@@ -371,7 +371,7 @@ export default function SavingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-blue-600 dark:text-blue-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400'>
               ${totalTargetAmount.toFixed(2)}
             </div>
             <p className='text-sm text-blue-700/70 dark:text-blue-300/70'>
@@ -387,7 +387,7 @@ export default function SavingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-purple-600 dark:text-purple-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400'>
               ${totalMonthlyContribution.toFixed(2)}
             </div>
             <p className='text-sm text-purple-700/70 dark:text-purple-300/70'>
@@ -403,7 +403,7 @@ export default function SavingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-orange-600 dark:text-orange-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-orange-600 dark:text-orange-400'>
               {completedGoals}/{savingsGoals.length}
             </div>
             <p className='text-sm text-orange-700/70 dark:text-orange-300/70'>

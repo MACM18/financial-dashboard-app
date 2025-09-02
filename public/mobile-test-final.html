@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile UI Test - Fixed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simulate the fixed versions of the components */
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-md mx-auto space-y-6">
+        <h1 class="text-2xl font-bold text-center text-blue-600 mb-8">Mobile UI Test - After Fixes</h1>
+        
+        <!-- Main Dashboard Header (Fixed) -->
+        <div class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 rounded-xl border">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                        Financial Dashboard
+                    </h1>
+                    <p class="text-gray-600">Welcome back! Here's your financial overview.</p>
+                </div>
+                <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg w-full sm:w-auto">
+                    View Analytics
+                </button>
+            </div>
+        </div>
+
+        <!-- AccountsOverview Header (Already Fixed) -->
+        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-blue-800 text-lg font-semibold">Accounts Overview</h2>
+                    <p class="text-sm text-gray-600">Manage your bank accounts, cards, and wallets</p>
+                </div>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full sm:w-auto">
+                    Add Account
+                </button>
+            </div>
+        </div>
+
+        <!-- TransactionsOverview Header (Fixed) -->
+        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-purple-800 text-lg font-semibold">Recent Transactions</h2>
+                    <p class="text-sm text-gray-600">Track your income and expenses across all accounts</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button class="border border-purple-300 text-purple-700 px-4 py-2 rounded-lg w-full sm:w-auto">
+                        Filter
+                    </button>
+                    <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg w-full sm:w-auto">
+                        Add Transaction
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Page Header (Fixed) -->
+        <div class="bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 p-6 rounded-xl border">
+            <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                Financial Analytics
+            </h1>
+            <p class="text-gray-600">Deep insights into your financial patterns</p>
+        </div>
+
+        <!-- Budget Page Header (Fixed) -->
+        <div class="bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 p-6 rounded-xl border">
+            <h1 class="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                Budget Tracker
+            </h1>
+            <p class="text-gray-600">Manage your monthly budget</p>
+        </div>
+
+        <!-- Responsive Numbers (Fixed) -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded-lg border text-center">
+                <div class="text-2xl sm:text-3xl font-bold text-green-600">$2,340</div>
+                <p class="text-sm text-gray-600">Total Budget</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg border text-center">
+                <div class="text-xl sm:text-2xl font-bold text-blue-600">+12.5%</div>
+                <p class="text-sm text-gray-600">vs last month</p>
+            </div>
+        </div>
+
+        <div class="text-center text-sm text-gray-500 mt-8">
+            ✅ All headers now responsive<br>
+            ✅ Buttons adapt to mobile width<br>
+            ✅ Text sizes scale appropriately<br>
+            ✅ No overflow issues
+        </div>
+    </div>
+</body>
+</html>

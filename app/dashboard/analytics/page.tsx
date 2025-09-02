@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
         <div className='relative z-10'>
           <div className='flex items-center gap-3 mb-2'>
             <BarChart3 className='h-8 w-8 text-purple-600 dark:text-purple-400' />
-            <h1 className='text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+            <h1 className='text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
               Financial Analytics
             </h1>
           </div>
@@ -66,7 +66,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-center'>
-              <p className='text-2xl font-bold text-blue-600 dark:text-blue-400'>
+              <p className='text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400'>
                 +12.5%
               </p>
               <p className='text-sm text-muted-foreground'>vs last month</p>
@@ -83,7 +83,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-center'>
-              <p className='text-2xl font-bold text-green-600 dark:text-green-400'>
+              <p className='text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400'>
                 23.4%
               </p>
               <p className='text-sm text-muted-foreground'>of income saved</p>
@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-center'>
-              <p className='text-2xl font-bold text-orange-600 dark:text-orange-400'>
+              <p className='text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400'>
                 $2,340
               </p>
               <p className='text-sm text-muted-foreground'>total spent</p>
