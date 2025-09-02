@@ -9,6 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface Activity {
@@ -30,6 +32,7 @@ interface Activity {
 
 export function RecentActivity() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,11 +67,8 @@ export function RecentActivity() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  const formatCurrencyDisplay = (amount: number) => {
+    return formatCurrency(amount, currency);
   };
 
   const getAmountColor = (transactionType: string, amount: number) => {
@@ -204,7 +204,7 @@ export function RecentActivity() {
                     ? "—"
                     : `${getAmountPrefix(
                         activity.transactionType
-                      )}${formatCurrency(Math.abs(activity.amount))}`}
+                      )}${formatCurrencyDisplay(Math.abs(activity.amount))}`}
                 </span>
               </div>
             ))

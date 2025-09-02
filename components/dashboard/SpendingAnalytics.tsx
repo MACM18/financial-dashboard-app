@@ -9,6 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
   AreaChart,
@@ -52,6 +54,7 @@ interface AnalyticsData {
 
 export function SpendingAnalytics() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -209,11 +212,8 @@ export function SpendingAnalytics() {
     "#8b5a2b", // brown
   ];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  const formatCurrencyDisplay = (amount: number) => {
+    return formatCurrency(amount, currency);
   };
 
   if (loading) {
@@ -274,7 +274,7 @@ export function SpendingAnalytics() {
                 </span>
               </div>
               <p className='font-semibold text-green-600 dark:text-green-400'>
-                {formatCurrency(data.totalIncome)}
+                {formatCurrencyDisplay(data.totalIncome)}
               </p>
             </div>
             <div className='text-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/30 border border-indigo-200/30 dark:border-indigo-800/30'>
@@ -285,7 +285,7 @@ export function SpendingAnalytics() {
                 </span>
               </div>
               <p className='font-semibold text-red-600 dark:text-red-400'>
-                {formatCurrency(data.totalExpenses)}
+                {formatCurrencyDisplay(data.totalExpenses)}
               </p>
             </div>
             <div className='text-center p-3 rounded-lg bg-white/60 dark:bg-gray-800/30 border border-indigo-200/30 dark:border-indigo-800/30'>
@@ -302,7 +302,7 @@ export function SpendingAnalytics() {
                     : "text-red-600 dark:text-red-400"
                 }`}
               >
-                {formatCurrency(data.netFlow)}
+                {formatCurrencyDisplay(data.netFlow)}
               </p>
             </div>
           </div>
@@ -332,7 +332,7 @@ export function SpendingAnalytics() {
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => [
-                        formatCurrency(value),
+                        formatCurrencyDisplay(value),
                         name === "income"
                           ? "Income"
                           : name === "expenses"
@@ -393,7 +393,7 @@ export function SpendingAnalytics() {
                     />
                     <Tooltip
                       formatter={(value: number) => [
-                        formatCurrency(value),
+                        formatCurrencyDisplay(value),
                         "Net Flow",
                       ]}
                       labelFormatter={(label) => `Month: ${label}`}
@@ -463,7 +463,7 @@ export function SpendingAnalytics() {
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value: number) => formatCurrencyDisplay(value)}
                         contentStyle={{
                           backgroundColor: "rgba(255, 255, 255, 0.95)",
                           border: "1px solid #e5e7eb",
@@ -496,7 +496,7 @@ export function SpendingAnalytics() {
                         </div>
                         <div className='text-right'>
                           <span className='text-sm font-semibold'>
-                            {formatCurrency(category.value)}
+                            {formatCurrencyDisplay(category.value)}
                           </span>
                           <div className='text-xs text-muted-foreground'>
                             {percentage.toFixed(1)}%
@@ -539,7 +539,7 @@ export function SpendingAnalytics() {
                       />
                       <Tooltip
                         formatter={(value: number) => [
-                          formatCurrency(value),
+                          formatCurrencyDisplay(value),
                           "Amount",
                         ]}
                         contentStyle={{

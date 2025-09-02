@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -71,6 +72,7 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [stats, setStats] = useState<SidebarStats | null>(null);
 
   useEffect(() => {
@@ -126,15 +128,8 @@ export function Sidebar({ className }: SidebarProps) {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    if (amount === 0) return "$0";
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}K`;
-    }
-    return `$${Math.round(amount).toLocaleString()}`;
+  const formatCurrencyCompact = (amount: number) => {
+    return formatCurrency(amount, currency, { compact: true });
   };
 
   return (
@@ -224,7 +219,7 @@ export function Sidebar({ className }: SidebarProps) {
             <div className='flex justify-between'>
               <span>Total Saved</span>
               <span className='font-medium'>
-                {stats ? formatCurrency(stats.totalSavings) : "$0"}
+                {stats ? formatCurrencyCompact(stats.totalSavings) : formatCurrency(0, currency, { compact: true })}
               </span>
             </div>
           </div>
