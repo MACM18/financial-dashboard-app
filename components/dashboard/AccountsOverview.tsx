@@ -169,7 +169,7 @@ export function AccountsOverview() {
   return (
     <Card className='bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border-blue-200/50 dark:border-blue-800/50'>
       <CardHeader>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
             <CardTitle className='text-blue-800 dark:text-blue-200'>
               Accounts Overview
@@ -181,7 +181,7 @@ export function AccountsOverview() {
           <Button
             onClick={() => setShowAddForm(true)}
             size='sm'
-            className='bg-blue-600 hover:bg-blue-700 text-white'
+            className='bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto'
           >
             <Plus className='h-4 w-4 mr-2' />
             Add Account
@@ -199,7 +199,7 @@ export function AccountsOverview() {
             <Button
               onClick={() => setShowAddForm(true)}
               size='sm'
-              className='mt-4 bg-blue-600 hover:bg-blue-700 text-white'
+              className='mt-4 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto'
             >
               <Plus className='h-4 w-4 mr-2' />
               Add Your First Account

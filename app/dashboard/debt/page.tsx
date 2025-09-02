@@ -209,7 +209,7 @@ export default function DebtPage() {
           <div>
             <div className='flex items-center gap-3 mb-2'>
               <CreditCard className='h-8 w-8 text-red-600 dark:text-red-400' />
-              <h1 className='text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+              <h1 className='text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
                 Debt Tracker
               </h1>
             </div>
@@ -393,7 +393,7 @@ export default function DebtPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-red-600 dark:text-red-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400'>
               ${totalDebt.toFixed(2)}
             </div>
             <p className='text-sm text-red-700/70 dark:text-red-300/70'>
@@ -409,7 +409,7 @@ export default function DebtPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-blue-600 dark:text-blue-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400'>
               ${totalMonthlyPayments.toFixed(2)}
             </div>
             <p className='text-sm text-blue-700/70 dark:text-blue-300/70'>
@@ -425,7 +425,7 @@ export default function DebtPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-green-600 dark:text-green-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400'>
               ${totalPaid.toFixed(2)}
             </div>
             <p className='text-sm text-green-700/70 dark:text-green-300/70'>
@@ -441,7 +441,7 @@ export default function DebtPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-3xl font-bold text-yellow-600 dark:text-yellow-400'>
+            <div className='text-2xl sm:text-3xl font-bold text-yellow-600 dark:text-yellow-400'>
               {averageInterestRate.toFixed(1)}%
             </div>
             <p className='text-sm text-yellow-700/70 dark:text-yellow-300/70'>

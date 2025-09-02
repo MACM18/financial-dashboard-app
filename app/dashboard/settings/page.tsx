@@ -219,7 +219,7 @@ export default function SettingsPage() {
         <div className='relative z-10'>
           <div className='flex items-center gap-3 mb-2'>
             <SettingsIcon className='h-8 w-8 text-gray-600 dark:text-gray-400' />
-            <h1 className='text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+            <h1 className='text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
               Account Settings
             </h1>
           </div>

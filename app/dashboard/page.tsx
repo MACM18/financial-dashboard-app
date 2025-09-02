@@ -79,11 +79,11 @@ export default function DashboardPage() {
       <div className='relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/50 dark:via-indigo-950/50 dark:to-purple-950/50 p-6 border border-border/50'>
         <div className='absolute inset-0 bg-gradient-to-br from-blue-500/5 via-indigo-500/5 to-purple-500/5 dark:from-blue-400/10 dark:via-indigo-400/10 dark:to-purple-400/10' />
         <div className='relative z-10'>
-          <div className='flex items-center justify-between'>
+          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
             <div>
               <div className='flex items-center gap-3 mb-2'>
                 <Sparkles className='h-6 w-6 text-indigo-600 dark:text-indigo-400' />
-                <h1 className='text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
+                <h1 className='text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent'>
                   Financial Dashboard
                 </h1>
               </div>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
             </div>
             <Button
               onClick={() => handleQuickAction("analytics")}
-              className='bg-indigo-600 hover:bg-indigo-700 text-white'
+              className='bg-indigo-600 hover:bg-indigo-700 text-white w-full sm:w-auto'
             >
               <BarChart3 className='h-4 w-4 mr-2' />
               View Analytics
