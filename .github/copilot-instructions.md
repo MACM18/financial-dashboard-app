@@ -25,9 +25,9 @@ Financial Dashboard App is a Next.js 14 TypeScript application that provides com
 - Production server: `npm run start` -- starts production server (requires build first)
 
 ### Database Operations
-- Setup database tables: `npm run setup-db` -- runs TypeScript setup script with Neon PostgreSQL
-- CRITICAL: Requires valid DATABASE_URL environment variable
-- Database setup creates comprehensive schema for users, budgets, savings goals, debts, and transactions
+- CRITICAL: Requires valid DATABASE_URL environment variable for all database operations
+- Database connection and operations are handled through API routes in `/app/api/`
+- Database schema includes tables for users, budgets, savings goals, debts, and transactions
 
 ### Linting and Code Quality
 - Run ESLint: `npm run lint` -- 3 seconds after initial setup
@@ -65,7 +65,7 @@ The application includes a comprehensive test script (`test-api.js`) that valida
 - `/contexts` - React contexts for global state management
 - `/hooks` - Custom React hooks
 - `/lib` - Utility functions and helpers
-- `/scripts` - Database setup and management scripts
+- `/scripts` - Database and utility scripts (avoid using, may contain incomplete information)
 - `/styles` - CSS and styling files
 
 ### Important Files
@@ -113,13 +113,13 @@ All API routes are in `/app/api/`:
 1. Run `npm run lint` and fix any new errors
 2. Run `npm run build` to ensure no build errors
 3. Test with `npm run dev` and verify functionality
-4. For database changes, test with database setup scripts
+4. For database changes, test through the application's UI and API endpoints
 
 ### Working with the Database
-- Database schema is defined in `/scripts/create_financial_tables.sql`
-- Additional tables in `/scripts/create_transactions_tables.sql`
-- Use `/scripts/setup-db.ts` to initialize database
-- Test database connectivity with scripts in `/scripts/` directory
+- Database operations are handled through API routes in `/app/api/`
+- Schema includes comprehensive tables for users, budgets, savings goals, debts, and transactions
+- Use the application's API endpoints for database interactions
+- Database connectivity can be verified through the API routes and application functionality
 
 ### Adding New Features
 - Follow existing patterns in `/app/api/` for API routes
@@ -164,7 +164,7 @@ All API routes are in `/app/api/`:
 
 ### Database Connection Issues
 - Verify DATABASE_URL format and credentials
-- Test connection with database setup scripts
+- Test connection through the application's API endpoints and functionality
 - Check Neon PostgreSQL service status
 
 Remember: Always build, test, and validate your changes thoroughly before completing any task.
