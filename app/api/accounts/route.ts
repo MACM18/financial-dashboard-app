@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = authHeader.replace('Bearer ', '')
-    const { name, accountType, balance = 0, currency = 'USD', description = '' } = await request.json()
+    const { name, accountType, balance = 0, currency = 'LKR', description = '' } = await request.json()
 
     if (!userId || !name || !accountType) {
       return NextResponse.json({ 

@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
         }
       } : {
         name: 'Deleted Account',
-        currency: 'USD',
+        currency: 'LKR',
         type: {
           name: 'deleted',
           icon: 'MoreHorizontal'
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
         }
       } : {
         name: 'Deleted Account',
-        currency: 'USD',
+        currency: 'LKR',
         type: {
           name: 'deleted',
           icon: 'MoreHorizontal'
@@ -383,7 +383,7 @@ export async function PUT(request: NextRequest) {
         }
       } : {
         name: 'Deleted Account',
-        currency: 'USD',
+        currency: 'LKR',
         type: {
           name: 'deleted',
           icon: 'MoreHorizontal'
