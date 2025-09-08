@@ -9,6 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
   RadarChart,
@@ -51,6 +53,7 @@ interface TransactionPattern {
 
 export function AdvancedCharts() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [monthlyPatterns, setMonthlyPatterns] = useState<MonthlyPattern[]>([]);
   const [categoryTreemap, setCategoryTreemap] = useState<CategoryData[]>([]);
@@ -258,7 +261,7 @@ export function AdvancedCharts() {
                     angle={90}
                     domain={[0, "dataMax"]}
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    tickFormatter={(value) => formatCurrency(value, currency, { compact: true })}
                   />
                   <Radar
                     name='Food'

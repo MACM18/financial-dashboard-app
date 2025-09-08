@@ -1,16 +1,17 @@
-"use client";
-
 import type React from "react";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Target } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface DashboardStat {
   title: string;
-  value: string;
+  value: string | number;
+  numericValue?: number;
   change: string;
   trend: "up" | "down";
   icon: React.ComponentType<{ className?: string }>;
@@ -27,6 +28,7 @@ export function DashboardStats() {
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { currency } = useCurrency();
 
   console.log(
     "[v0] DashboardStats rendering, user:",
@@ -66,9 +68,10 @@ export function DashboardStats() {
       const data = await response.json();
       console.log("[v0] Dashboard stats loaded:", data);
 
-      // Convert icon strings to components
+      // Convert icon strings to components and format currency values
       const calculatedStats: DashboardStat[] = data.stats.map((stat: any) => ({
         ...stat,
+        value: typeof stat.numericValue === 'number' ? formatCurrency(stat.numericValue, currency) : stat.value,
         icon: iconMap[stat.icon as keyof typeof iconMap] || DollarSign,
       }));
 
@@ -79,14 +82,14 @@ export function DashboardStats() {
       setStats([
         {
           title: "Total Budget",
-          value: "$0",
+          value: formatCurrency(0, currency),
           change: "Set up your budget",
           trend: "up" as const,
           icon: DollarSign,
         },
         {
           title: "Monthly Spending",
-          value: "$0",
+          value: formatCurrency(0, currency),
           change: "No spending tracked",
           trend: "down" as const,
           icon: TrendingDown,
@@ -100,7 +103,7 @@ export function DashboardStats() {
         },
         {
           title: "Debt Remaining",
-          value: "$0",
+          value: formatCurrency(0, currency),
           change: "No debts tracked",
           trend: "down" as const,
           icon: TrendingUp,

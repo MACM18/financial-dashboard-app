@@ -169,6 +169,12 @@ export default function SavingsPage() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<
     "1M" | "3M" | "6M" | "1Y"
   >("6M");
+  
+  // Helper function for currency-aware placeholders
+  const formatPlaceholder = (amount: number) => {
+    return formatCurrency(amount, currency, { hideSymbol: true });
+  };
+  
   const [newGoal, setNewGoal] = useState({
     name: "",
     targetAmount: "",
@@ -629,7 +635,7 @@ export default function SavingsPage() {
                         <Input
                           id='target-amount'
                           type='number'
-                          placeholder='10000.00'
+                          placeholder={formatPlaceholder(10000)}
                           step='0.01'
                           value={newGoal.targetAmount}
                           onChange={(e) =>
@@ -645,7 +651,7 @@ export default function SavingsPage() {
                         <Input
                           id='current-amount'
                           type='number'
-                          placeholder='0.00'
+                          placeholder={formatPlaceholder(0)}
                           step='0.01'
                           value={newGoal.currentAmount}
                           onChange={(e) =>
@@ -666,7 +672,7 @@ export default function SavingsPage() {
                         <Input
                           id='monthly-contribution'
                           type='number'
-                          placeholder='500.00'
+                          placeholder={formatPlaceholder(500)}
                           step='0.01'
                           value={newGoal.monthlyContribution}
                           onChange={(e) =>
@@ -904,7 +910,7 @@ export default function SavingsPage() {
                       borderRadius: "8px",
                     }}
                     formatter={(value: any, name: string) => [
-                      showPrivacyMode ? "••••••" : `$${value.toFixed(2)}`,
+                      showPrivacyMode ? "••••••" : formatCurrency(value, currency),
                       name === "saved" ? "Amount Saved" : "Target Amount",
                     ]}
                   />
@@ -1076,7 +1082,7 @@ export default function SavingsPage() {
                   </Pie>
                   <Tooltip
                     formatter={(value: any) => [
-                      showPrivacyMode ? "••••••" : `$${value.toFixed(2)}`,
+                      showPrivacyMode ? "••••••" : formatCurrency(value, currency),
                       "Amount",
                     ]}
                     contentStyle={{

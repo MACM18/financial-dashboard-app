@@ -170,7 +170,7 @@ export function SavingsGoals({
         <Target className='mx-auto h-12 w-12 text-muted-foreground' />
         <h3 className='mt-4 text-lg font-semibold'>No savings goals yet</h3>
         <p className='mt-2 text-sm text-muted-foreground'>
-          Click "Add Savings Goal" to create your first one.
+          Click &quot;Add Savings Goal&quot; to create your first one.
         </p>
       </div>
     );
