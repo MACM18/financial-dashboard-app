@@ -910,7 +910,7 @@ export default function SavingsPage() {
                       borderRadius: "8px",
                     }}
                     formatter={(value: any, name: string) => [
-                      showPrivacyMode ? "••••••" : `$${value.toFixed(2)}`,
+                      showPrivacyMode ? "••••••" : formatCurrency(value, currency),
                       name === "saved" ? "Amount Saved" : "Target Amount",
                     ]}
                   />
@@ -1082,7 +1082,7 @@ export default function SavingsPage() {
                   </Pie>
                   <Tooltip
                     formatter={(value: any) => [
-                      showPrivacyMode ? "••••••" : `$${value.toFixed(2)}`,
+                      showPrivacyMode ? "••••••" : formatCurrency(value, currency),
                       "Amount",
                     ]}
                     contentStyle={{

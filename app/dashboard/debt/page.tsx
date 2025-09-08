@@ -432,7 +432,7 @@ export default function DebtPage() {
                   <span className='text-muted-foreground'>Total Debt: </span>
                   <span className='font-semibold text-red-600 dark:text-red-400'>
                     {showSensitiveData
-                      ? `$${analytics.totalDebt.toFixed(2)}`
+                      ? formatCurrency(analytics.totalDebt, currency)
                       : "***"}
                   </span>
                 </div>
@@ -441,7 +441,7 @@ export default function DebtPage() {
                   <span className='text-muted-foreground'>Monthly: </span>
                   <span className='font-semibold text-blue-600 dark:text-blue-400'>
                     {showSensitiveData
-                      ? `$${analytics.totalMonthlyPayments.toFixed(2)}`
+                      ? formatCurrency(analytics.totalMonthlyPayments, currency)
                       : "***"}
                   </span>
                 </div>
@@ -669,7 +669,7 @@ export default function DebtPage() {
             <CardContent>
               <div className='text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400 mb-2'>
                 {showSensitiveData
-                  ? `$${analytics.totalDebt.toFixed(2)}`
+                  ? formatCurrency(analytics.totalDebt, currency)
                   : "***"}
               </div>
               <Progress
@@ -698,7 +698,7 @@ export default function DebtPage() {
             <CardContent>
               <div className='text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400'>
                 {showSensitiveData
-                  ? `$${analytics.totalMonthlyPayments.toFixed(2)}`
+                  ? formatCurrency(analytics.totalMonthlyPayments, currency)
                   : "***"}
               </div>
               <p className='text-sm text-blue-700/70 dark:text-blue-300/70'>
@@ -728,7 +728,7 @@ export default function DebtPage() {
               </div>
               <p className='text-sm text-green-700/70 dark:text-green-300/70'>
                 {showSensitiveData
-                  ? `$${analytics.totalPaid.toFixed(2)} paid down`
+                  ? `${formatCurrency(analytics.totalPaid, currency)} paid down`
                   : "Amount paid down"}
               </p>
             </CardContent>
@@ -806,7 +806,7 @@ export default function DebtPage() {
                       <div className='text-right'>
                         <div className='font-semibold'>
                           {showSensitiveData
-                            ? `$${data.amount.toFixed(2)}`
+                            ? formatCurrency(data.amount, currency)
                             : "***"}
                         </div>
                         <div className='text-xs text-muted-foreground'>
