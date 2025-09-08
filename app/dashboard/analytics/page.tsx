@@ -18,8 +18,12 @@ import {
   Target,
   DollarSign,
 } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 
 export default function AnalyticsPage() {
+  const { currency } = useCurrency();
+  
   return (
     <div className='space-y-8'>
       {/* Page Header */}
@@ -118,7 +122,7 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className='text-center'>
               <p className='text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400'>
-                $2,340
+                {formatCurrency(2340, currency)}
               </p>
               <p className='text-sm text-muted-foreground'>total spent</p>
             </div>

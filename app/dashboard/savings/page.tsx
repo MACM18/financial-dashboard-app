@@ -169,6 +169,12 @@ export default function SavingsPage() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<
     "1M" | "3M" | "6M" | "1Y"
   >("6M");
+  
+  // Helper function for currency-aware placeholders
+  const formatPlaceholder = (amount: number) => {
+    return formatCurrency(amount, currency, { hideSymbol: true });
+  };
+  
   const [newGoal, setNewGoal] = useState({
     name: "",
     targetAmount: "",
@@ -629,7 +635,7 @@ export default function SavingsPage() {
                         <Input
                           id='target-amount'
                           type='number'
-                          placeholder='10000.00'
+                          placeholder={formatPlaceholder(10000)}
                           step='0.01'
                           value={newGoal.targetAmount}
                           onChange={(e) =>
@@ -645,7 +651,7 @@ export default function SavingsPage() {
                         <Input
                           id='current-amount'
                           type='number'
-                          placeholder='0.00'
+                          placeholder={formatPlaceholder(0)}
                           step='0.01'
                           value={newGoal.currentAmount}
                           onChange={(e) =>
@@ -666,7 +672,7 @@ export default function SavingsPage() {
                         <Input
                           id='monthly-contribution'
                           type='number'
-                          placeholder='500.00'
+                          placeholder={formatPlaceholder(500)}
                           step='0.01'
                           value={newGoal.monthlyContribution}
                           onChange={(e) =>

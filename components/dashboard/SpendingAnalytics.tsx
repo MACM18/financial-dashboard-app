@@ -328,7 +328,7 @@ export function SpendingAnalytics() {
                     <YAxis
                       className='text-xs'
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      tickFormatter={(value) => formatCurrencyDisplay(value)}
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => [
@@ -389,7 +389,7 @@ export function SpendingAnalytics() {
                     <YAxis
                       className='text-xs'
                       tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      tickFormatter={(value) => formatCurrencyDisplay(value)}
                     />
                     <Tooltip
                       formatter={(value: number) => [
