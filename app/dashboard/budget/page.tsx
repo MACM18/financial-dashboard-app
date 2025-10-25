@@ -10,6 +10,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
@@ -27,6 +29,7 @@ const DEFAULT_CATEGORIES = [
 
 export default function BudgetPage() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const { toast } = useToast();
   const [budgets, setBudgets] = useState<BudgetRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -221,7 +224,7 @@ export default function BudgetPage() {
               </CardHeader>
               <CardContent>
                 <div className='text-2xl font-bold'>
-                  ${summary.totalBudgeted.toFixed(2)}
+                  {formatCurrency(summary.totalBudgeted, currency)}
                 </div>
               </CardContent>
             </Card>
@@ -234,7 +237,7 @@ export default function BudgetPage() {
               </CardHeader>
               <CardContent>
                 <div className='text-2xl font-bold'>
-                  ${summary.totalActual.toFixed(2)}
+                  {formatCurrency(summary.totalActual, currency)}
                 </div>
               </CardContent>
             </Card>
@@ -255,7 +258,7 @@ export default function BudgetPage() {
                     summary.difference >= 0 ? "" : "text-destructive"
                   }`}
                 >
-                  ${summary.difference.toFixed(2)}
+                  {formatCurrency(summary.difference, currency)}
                 </div>
               </CardContent>
             </Card>

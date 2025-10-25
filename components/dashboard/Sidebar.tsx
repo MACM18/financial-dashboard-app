@@ -92,21 +92,13 @@ export function Sidebar({ className }: SidebarProps) {
       if (response.ok) {
         const data = await response.json();
 
-        // Parse values from the stats response
-        const totalBudget = parseFloat(
-          data.stats[0]?.value?.replace(/[$,]/g, "") || "0"
-        );
-        const totalSavings = parseFloat(
-          data.stats[2]?.value?.replace(/[$,]/g, "") || "0"
-        );
-        const totalDebt = parseFloat(
-          data.stats[3]?.value?.replace(/[$,]/g, "") || "0"
-        );
+        // Use numeric values from the stats response
+        const totalBudget = data.stats[0]?.numericValue || data.stats[0]?.value || 0;
+        const totalSavings = data.stats[2]?.numericValue || data.stats[2]?.value || 0;
+        const totalDebt = data.stats[3]?.numericValue || data.stats[3]?.value || 0;
 
         // Calculate monthly change based on spending vs budget
-        const totalSpent = parseFloat(
-          data.stats[1]?.value?.replace(/[$,]/g, "") || "0"
-        );
+        const totalSpent = data.stats[1]?.numericValue || data.stats[1]?.value || 0;
         const monthlyChange =
           totalBudget > 0
             ? ((totalBudget - totalSpent) / totalBudget) * 100

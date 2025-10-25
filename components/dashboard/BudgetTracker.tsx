@@ -13,6 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 
 export type BudgetRow = {
   id?: string;
@@ -41,6 +43,8 @@ export function BudgetTracker({
   onAddBudgetRow,
   savingId,
 }: BudgetTrackerProps) {
+  const { currency } = useCurrency();
+  
   const totals = React.useMemo(() => {
     const budgeted = budgets.reduce(
       (s, r) => s + Number(r.budgetedAmount || 0),
@@ -141,10 +145,10 @@ export function BudgetTracker({
             <TableRow>
               <TableCell className='font-bold'>Totals</TableCell>
               <TableCell className='font-bold'>
-                ${totals.budgeted.toFixed(2)}
+                {formatCurrency(totals.budgeted, currency)}
               </TableCell>
               <TableCell className='font-bold'>
-                ${totals.actual.toFixed(2)}
+                {formatCurrency(totals.actual, currency)}
               </TableCell>
               <TableCell />
               <TableCell />

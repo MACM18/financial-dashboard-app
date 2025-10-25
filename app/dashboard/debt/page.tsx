@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/utils";
 import { DebtTracker } from "@/components/dashboard/DebtTracker";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,7 +98,14 @@ const DEBT_TYPES = [
 
 export default function DebtPage() {
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const { toast } = useToast();
+  
+  // Helper function for currency-aware placeholders
+  const formatPlaceholder = (amount: number) => {
+    return formatCurrency(amount, currency, { hideSymbol: true });
+  };
+  
   const [debts, setDebts] = useState<Debt[]>([]);
   const [analytics, setAnalytics] = useState<DebtAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -423,7 +432,7 @@ export default function DebtPage() {
                   <span className='text-muted-foreground'>Total Debt: </span>
                   <span className='font-semibold text-red-600 dark:text-red-400'>
                     {showSensitiveData
-                      ? `$${analytics.totalDebt.toFixed(2)}`
+                      ? formatCurrency(analytics.totalDebt, currency)
                       : "***"}
                   </span>
                 </div>
@@ -432,7 +441,7 @@ export default function DebtPage() {
                   <span className='text-muted-foreground'>Monthly: </span>
                   <span className='font-semibold text-blue-600 dark:text-blue-400'>
                     {showSensitiveData
-                      ? `$${analytics.totalMonthlyPayments.toFixed(2)}`
+                      ? formatCurrency(analytics.totalMonthlyPayments, currency)
                       : "***"}
                   </span>
                 </div>
@@ -531,7 +540,7 @@ export default function DebtPage() {
                       <Input
                         id='original-amount'
                         type='number'
-                        placeholder='10000.00'
+                        placeholder={formatPlaceholder(10000)}
                         step='0.01'
                         value={newDebt.originalAmount}
                         onChange={(e) =>
@@ -547,7 +556,7 @@ export default function DebtPage() {
                       <Input
                         id='current-balance'
                         type='number'
-                        placeholder='8500.00'
+                        placeholder={formatPlaceholder(8500)}
                         step='0.01'
                         value={newDebt.currentBalance}
                         onChange={(e) =>
@@ -566,7 +575,7 @@ export default function DebtPage() {
                       <Input
                         id='monthly-payment'
                         type='number'
-                        placeholder='300.00'
+                        placeholder={formatPlaceholder(300)}
                         step='0.01'
                         value={newDebt.monthlyPayment}
                         onChange={(e) =>
@@ -582,7 +591,7 @@ export default function DebtPage() {
                       <Input
                         id='minimum-payment'
                         type='number'
-                        placeholder='200.00'
+                        placeholder={formatPlaceholder(200)}
                         step='0.01'
                         value={newDebt.minimumPayment}
                         onChange={(e) =>
@@ -660,7 +669,7 @@ export default function DebtPage() {
             <CardContent>
               <div className='text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400 mb-2'>
                 {showSensitiveData
-                  ? `$${analytics.totalDebt.toFixed(2)}`
+                  ? formatCurrency(analytics.totalDebt, currency)
                   : "***"}
               </div>
               <Progress
@@ -689,7 +698,7 @@ export default function DebtPage() {
             <CardContent>
               <div className='text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400'>
                 {showSensitiveData
-                  ? `$${analytics.totalMonthlyPayments.toFixed(2)}`
+                  ? formatCurrency(analytics.totalMonthlyPayments, currency)
                   : "***"}
               </div>
               <p className='text-sm text-blue-700/70 dark:text-blue-300/70'>
@@ -719,7 +728,7 @@ export default function DebtPage() {
               </div>
               <p className='text-sm text-green-700/70 dark:text-green-300/70'>
                 {showSensitiveData
-                  ? `$${analytics.totalPaid.toFixed(2)} paid down`
+                  ? `${formatCurrency(analytics.totalPaid, currency)} paid down`
                   : "Amount paid down"}
               </p>
             </CardContent>
@@ -797,7 +806,7 @@ export default function DebtPage() {
                       <div className='text-right'>
                         <div className='font-semibold'>
                           {showSensitiveData
-                            ? `$${data.amount.toFixed(2)}`
+                            ? formatCurrency(data.amount, currency)
                             : "***"}
                         </div>
                         <div className='text-xs text-muted-foreground'>

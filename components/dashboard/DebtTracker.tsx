@@ -13,6 +13,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency as formatCurrencyUtil } from "@/lib/utils";
 import {
   CreditCard,
   Calendar,
@@ -51,6 +53,7 @@ export function DebtTracker({
   onMakePayment,
 }: DebtTrackerProps) {
   const { toast } = useToast();
+  const { currency } = useCurrency();
   const [editingDebt, setEditingDebt] = useState<string | null>(null);
   const [addingPayment, setAddingPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -110,10 +113,7 @@ export function DebtTracker({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+    return formatCurrencyUtil(amount, currency);
   };
 
   const formatDate = (dateString: string | null) => {

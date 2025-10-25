@@ -84,28 +84,32 @@ export async function GET(request: NextRequest) {
     const stats = [
       {
         title: `${monthName} Budget`,
-        value: `$${totalBudget.toFixed(2)}`,
-        change: remaining >= 0 ? `$${remaining.toFixed(2)} remaining` : `$${Math.abs(remaining).toFixed(2)} over budget`,
+        value: totalBudget,
+        numericValue: totalBudget,
+        change: remaining >= 0 ? `${remaining.toFixed(2)} remaining` : `${Math.abs(remaining).toFixed(2)} over budget`,
         trend: remaining >= 0 ? "up" : "down" as "up" | "down",
         icon: "DollarSign"
       },
       {
         title: "Total Spent",
-        value: `$${totalSpent.toFixed(2)}`,
+        value: totalSpent,
+        numericValue: totalSpent,
         change: `${spentPercentage.toFixed(1)}% of budget`,
         trend: spentPercentage <= 80 ? "up" : "down" as "up" | "down",
         icon: "TrendingDown"
       },
       {
         title: "Savings Progress",
-        value: `$${totalSaved.toFixed(2)}`,
+        value: totalSaved,
+        numericValue: totalSaved,
         change: `${savingsProgress.toFixed(1)}% of goal`,
         trend: savingsProgress > 0 ? "up" : "down" as "up" | "down",
         icon: "Target"
       },
       {
         title: "Total Debt",
-        value: `$${totalDebt.toFixed(2)}`,
+        value: totalDebt,
+        numericValue: totalDebt,
         change: totalDebt > 0 ? "Active debts" : "Debt free!",
         trend: totalDebt === 0 ? "up" : "down" as "up" | "down",
         icon: "TrendingUp"
